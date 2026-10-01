@@ -1,0 +1,734 @@
+/* ============================================================
+   TYPE FLOW — themes.css
+   Theme engine: 24 built-in themes + custom accent support
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   HOW IT WORKS
+   ------------------------------------------------------------
+   Each theme overrides the color tokens defined in main.css:
+     --bg, --bg-elevated, --surface, --surface-hover
+     --border, --border-strong
+     --text-primary, --text-secondary, --text-muted, --text-dim
+     --accent, --accent-hover, --accent-dim, --accent-glow
+     --error, --error-dim
+     --success, --warning
+
+   Applied via: <html data-theme="serika-dark">
+   Custom accent: <html data-custom-accent="true" style="--accent: #xxx">
+   ------------------------------------------------------------ */
+
+/* ============================================================
+   1. SERIKA DARK (default)
+   ============================================================ */
+html[data-theme="serika-dark"] {
+  --bg: #0e0e0e;
+  --bg-elevated: #131313;
+  --surface: #181818;
+  --surface-hover: #1f1f1f;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-muted: #5a5a5a;
+  --text-dim: #3a3a3a;
+
+  --accent: #e2b714;
+  --accent-hover: #f0c530;
+  --accent-dim: rgba(226, 183, 20, 0.12);
+  --accent-glow: rgba(226, 183, 20, 0.35);
+
+  --error: #ef4444;
+  --error-dim: rgba(239, 68, 68, 0.15);
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+/* ============================================================
+   2. SERIKA LIGHT
+   ============================================================ */
+html[data-theme="serika-light"] {
+  --bg: #f5f5f5;
+  --bg-elevated: #ffffff;
+  --surface: #ececec;
+  --surface-hover: #e2e2e2;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #5a5a5a;
+  --text-muted: #909090;
+  --text-dim: #c0c0c0;
+
+  --accent: #d4a30c;
+  --accent-hover: #b88d0a;
+  --accent-dim: rgba(212, 163, 12, 0.14);
+  --accent-glow: rgba(212, 163, 12, 0.25);
+
+  --error: #dc2626;
+  --error-dim: rgba(220, 38, 38, 0.12);
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+/* ============================================================
+   3. DRACULA
+   ============================================================ */
+html[data-theme="dracula"] {
+  --bg: #1e1f29;
+  --bg-elevated: #282a36;
+  --surface: #343746;
+  --surface-hover: #3f4257;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #f8f8f2;
+  --text-secondary: #b8b8c8;
+  --text-muted: #6272a4;
+  --text-dim: #44475a;
+
+  --accent: #bd93f9;
+  --accent-hover: #cba6fb;
+  --accent-dim: rgba(189, 147, 249, 0.15);
+  --accent-glow: rgba(189, 147, 249, 0.4);
+
+  --error: #ff5555;
+  --error-dim: rgba(255, 85, 85, 0.15);
+  --success: #50fa7b;
+  --warning: #f1fa8c;
+}
+
+/* ============================================================
+   4. NORD
+   ============================================================ */
+html[data-theme="nord"] {
+  --bg: #242933;
+  --bg-elevated: #2e3440;
+  --surface: #3b4252;
+  --surface-hover: #434c5e;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #eceff4;
+  --text-secondary: #d8dee9;
+  --text-muted: #7b88a1;
+  --text-dim: #4c566a;
+
+  --accent: #88c0d0;
+  --accent-hover: #9bd0de;
+  --accent-dim: rgba(136, 192, 208, 0.15);
+  --accent-glow: rgba(136, 192, 208, 0.4);
+
+  --error: #bf616a;
+  --error-dim: rgba(191, 97, 106, 0.15);
+  --success: #a3be8c;
+  --warning: #ebcb8b;
+}
+
+/* ============================================================
+   5. CYBERPUNK
+   ============================================================ */
+html[data-theme="cyberpunk"] {
+  --bg: #0a0e17;
+  --bg-elevated: #0f1420;
+  --surface: #141b2b;
+  --surface-hover: #1c2438;
+  --border: rgba(247, 224, 94, 0.1);
+  --border-strong: rgba(247, 224, 94, 0.2);
+
+  --text-primary: #c1c9e0;
+  --text-secondary: #8a94b0;
+  --text-muted: #3a4a6b;
+  --text-dim: #222c42;
+
+  --accent: #f7e05e;
+  --accent-hover: #fcea7e;
+  --accent-dim: rgba(247, 224, 94, 0.12);
+  --accent-glow: rgba(247, 224, 94, 0.4);
+
+  --error: #ff2a6d;
+  --error-dim: rgba(255, 42, 109, 0.15);
+  --success: #05d9e8;
+  --warning: #f7e05e;
+}
+
+/* ============================================================
+   6. MATRIX
+   ============================================================ */
+html[data-theme="matrix"] {
+  --bg: #000000;
+  --bg-elevated: #0a0a0a;
+  --surface: #0d0d0d;
+  --surface-hover: #141414;
+  --border: rgba(0, 255, 65, 0.12);
+  --border-strong: rgba(0, 255, 65, 0.25);
+
+  --text-primary: #00ff41;
+  --text-secondary: #00b32e;
+  --text-muted: #005c17;
+  --text-dim: #003b00;
+
+  --accent: #00ff41;
+  --accent-hover: #4dff77;
+  --accent-dim: rgba(0, 255, 65, 0.12);
+  --accent-glow: rgba(0, 255, 65, 0.5);
+
+  --error: #ff2a2a;
+  --error-dim: rgba(255, 42, 42, 0.15);
+  --success: #00ff41;
+  --warning: #ffe600;
+}
+
+/* ============================================================
+   7. BENTO
+   ============================================================ */
+html[data-theme="bento"] {
+  --bg: #1a1b1e;
+  --bg-elevated: #222327;
+  --surface: #2c2e31;
+  --surface-hover: #35373b;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #f8f8f2;
+  --text-secondary: #b0b0b0;
+  --text-muted: #6a6a6a;
+  --text-dim: #404040;
+
+  --accent: #ffb86c;
+  --accent-hover: #ffc98a;
+  --accent-dim: rgba(255, 184, 108, 0.15);
+  --accent-glow: rgba(255, 184, 108, 0.4);
+
+  --error: #ff5555;
+  --error-dim: rgba(255, 85, 85, 0.15);
+  --success: #50fa7b;
+  --warning: #f1fa8c;
+}
+
+/* ============================================================
+   8. CHALK LIGHT
+   ============================================================ */
+html[data-theme="chalk-light"] {
+  --bg: #f7f7f7;
+  --bg-elevated: #ffffff;
+  --surface: #eeeeee;
+  --surface-hover: #e4e4e4;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.18);
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #909090;
+  --text-dim: #c4c4c4;
+
+  --accent: #1a1a1a;
+  --accent-hover: #000000;
+  --accent-dim: rgba(26, 26, 26, 0.1);
+  --accent-glow: rgba(26, 26, 26, 0.2);
+
+  --error: #ca4754;
+  --error-dim: rgba(202, 71, 84, 0.12);
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+/* ============================================================
+   9. TOKYO NIGHT
+   ============================================================ */
+html[data-theme="tokyo-night"] {
+  --bg: #1a1b26;
+  --bg-elevated: #1f2335;
+  --surface: #24283b;
+  --surface-hover: #2f334d;
+  --border: rgba(122, 162, 247, 0.1);
+  --border-strong: rgba(122, 162, 247, 0.22);
+
+  --text-primary: #c0caf5;
+  --text-secondary: #9aa5ce;
+  --text-muted: #565f89;
+  --text-dim: #3b4261;
+
+  --accent: #7aa2f7;
+  --accent-hover: #9bb5f9;
+  --accent-dim: rgba(122, 162, 247, 0.15);
+  --accent-glow: rgba(122, 162, 247, 0.45);
+
+  --error: #f7768e;
+  --error-dim: rgba(247, 118, 142, 0.15);
+  --success: #9ece6a;
+  --warning: #e0af68;
+}
+
+/* ============================================================
+   10. CATPPUCCIN MOCHA
+   ============================================================ */
+html[data-theme="catppuccin-mocha"] {
+  --bg: #11111b;
+  --bg-elevated: #181825;
+  --surface: #1e1e2e;
+  --surface-hover: #313244;
+  --border: rgba(205, 214, 244, 0.08);
+  --border-strong: rgba(205, 214, 244, 0.18);
+
+  --text-primary: #cdd6f4;
+  --text-secondary: #a6adc8;
+  --text-muted: #6c7086;
+  --text-dim: #45475a;
+
+  --accent: #f5c2e7;
+  --accent-hover: #f7cff0;
+  --accent-dim: rgba(245, 194, 231, 0.15);
+  --accent-glow: rgba(245, 194, 231, 0.4);
+
+  --error: #f38ba8;
+  --error-dim: rgba(243, 139, 168, 0.15);
+  --success: #a6e3a1;
+  --warning: #f9e2af;
+}
+
+/* ============================================================
+   11. CATPPUCCIN LATTE (light)
+   ============================================================ */
+html[data-theme="catppuccin-latte"] {
+  --bg: #eff1f5;
+  --bg-elevated: #ffffff;
+  --surface: #e6e9ef;
+  --surface-hover: #dce0e8;
+  --border: rgba(76, 79, 105, 0.1);
+  --border-strong: rgba(76, 79, 105, 0.2);
+
+  --text-primary: #4c4f69;
+  --text-secondary: #5c5f77;
+  --text-muted: #8c8fa1;
+  --text-dim: #bcc0cc;
+
+  --accent: #8839ef;
+  --accent-hover: #9c53f2;
+  --accent-dim: rgba(136, 57, 239, 0.12);
+  --accent-glow: rgba(136, 57, 239, 0.28);
+
+  --error: #d20f39;
+  --error-dim: rgba(210, 15, 57, 0.12);
+  --success: #40a02b;
+  --warning: #df8e1d;
+}
+
+/* ============================================================
+   12. GRUVBOX DARK
+   ============================================================ */
+html[data-theme="gruvbox-dark"] {
+  --bg: #1d2021;
+  --bg-elevated: #282828;
+  --surface: #32302f;
+  --surface-hover: #3c3836;
+  --border: rgba(235, 219, 178, 0.1);
+  --border-strong: rgba(235, 219, 178, 0.2);
+
+  --text-primary: #ebdbb2;
+  --text-secondary: #d5c4a1;
+  --text-muted: #928374;
+  --text-dim: #665c54;
+
+  --accent: #fabd2f;
+  --accent-hover: #ffca4d;
+  --accent-dim: rgba(250, 189, 47, 0.15);
+  --accent-glow: rgba(250, 189, 47, 0.4);
+
+  --error: #fb4934;
+  --error-dim: rgba(251, 73, 52, 0.15);
+  --success: #b8bb26;
+  --warning: #fabd2f;
+}
+
+/* ============================================================
+   13. ROSÉ PINE
+   ============================================================ */
+html[data-theme="rose-pine"] {
+  --bg: #16141f;
+  --bg-elevated: #191724;
+  --surface: #1f1d2e;
+  --surface-hover: #26233a;
+  --border: rgba(224, 222, 244, 0.08);
+  --border-strong: rgba(224, 222, 244, 0.18);
+
+  --text-primary: #e0def4;
+  --text-secondary: #c4c1dc;
+  --text-muted: #6e6a86;
+  --text-dim: #403d52;
+
+  --accent: #ebbcba;
+  --accent-hover: #f0cac8;
+  --accent-dim: rgba(235, 188, 186, 0.15);
+  --accent-glow: rgba(235, 188, 186, 0.4);
+
+  --error: #eb6f92;
+  --error-dim: rgba(235, 111, 146, 0.15);
+  --success: #9ccfd8;
+  --warning: #f6c177;
+}
+
+/* ============================================================
+   14. EVERFOREST
+   ============================================================ */
+html[data-theme="everforest"] {
+  --bg: #272e33;
+  --bg-elevated: #2e383c;
+  --surface: #374145;
+  --surface-hover: #414b50;
+  --border: rgba(211, 198, 170, 0.08);
+  --border-strong: rgba(211, 198, 170, 0.18);
+
+  --text-primary: #d3c6aa;
+  --text-secondary: #b8ad94;
+  --text-muted: #859289;
+  --text-dim: #4f5b58;
+
+  --accent: #a7c080;
+  --accent-hover: #b8d194;
+  --accent-dim: rgba(167, 192, 128, 0.15);
+  --accent-glow: rgba(167, 192, 128, 0.4);
+
+  --error: #e67e80;
+  --error-dim: rgba(230, 126, 128, 0.15);
+  --success: #a7c080;
+  --warning: #dbbc7f;
+}
+
+/* ============================================================
+   15. KANAGAWA
+   ============================================================ */
+html[data-theme="kanagawa"] {
+  --bg: #16161d;
+  --bg-elevated: #1f1f28;
+  --surface: #2a2a37;
+  --surface-hover: #363646;
+  --border: rgba(220, 215, 186, 0.08);
+  --border-strong: rgba(220, 215, 186, 0.18);
+
+  --text-primary: #dcd7ba;
+  --text-secondary: #c8c093;
+  --text-muted: #727169;
+  --text-dim: #54546d;
+
+  --accent: #7e9cd8;
+  --accent-hover: #9bb0e0;
+  --accent-dim: rgba(126, 156, 216, 0.15);
+  --accent-glow: rgba(126, 156, 216, 0.4);
+
+  --error: #e82424;
+  --error-dim: rgba(232, 36, 36, 0.15);
+  --success: #98bb6c;
+  --warning: #e6c384;
+}
+
+/* ============================================================
+   16. AYU DARK
+   ============================================================ */
+html[data-theme="ayu-dark"] {
+  --bg: #0a0e14;
+  --bg-elevated: #0f131a;
+  --surface: #141821;
+  --surface-hover: #1e222a;
+  --border: rgba(230, 225, 207, 0.08);
+  --border-strong: rgba(230, 225, 207, 0.18);
+
+  --text-primary: #e6e1cf;
+  --text-secondary: #b3b1a6;
+  --text-muted: #565b66;
+  --text-dim: #2d333d;
+
+  --accent: #ffb454;
+  --accent-hover: #ffc476;
+  --accent-dim: rgba(255, 180, 84, 0.15);
+  --accent-glow: rgba(255, 180, 84, 0.4);
+
+  --error: #f07178;
+  --error-dim: rgba(240, 113, 120, 0.15);
+  --success: #aad94c;
+  --warning: #ffb454;
+}
+
+/* ============================================================
+   17. ONE DARK
+   ============================================================ */
+html[data-theme="one-dark"] {
+  --bg: #1e2127;
+  --bg-elevated: #21252b;
+  --surface: #282c34;
+  --surface-hover: #2f343d;
+  --border: rgba(171, 178, 191, 0.08);
+  --border-strong: rgba(171, 178, 191, 0.18);
+
+  --text-primary: #abb2bf;
+  --text-secondary: #8b92a0;
+  --text-muted: #5c6370;
+  --text-dim: #3e4451;
+
+  --accent: #61afef;
+  --accent-hover: #7dc0f2;
+  --accent-dim: rgba(97, 175, 239, 0.15);
+  --accent-glow: rgba(97, 175, 239, 0.4);
+
+  --error: #e06c75;
+  --error-dim: rgba(224, 108, 117, 0.15);
+  --success: #98c379;
+  --warning: #e5c07b;
+}
+
+/* ============================================================
+   18. SOLARIZED DARK
+   ============================================================ */
+html[data-theme="solarized-dark"] {
+  --bg: #002b36;
+  --bg-elevated: #073642;
+  --surface: #0a4250;
+  --surface-hover: #0f4b5a;
+  --border: rgba(147, 161, 161, 0.1);
+  --border-strong: rgba(147, 161, 161, 0.22);
+
+  --text-primary: #93a1a1;
+  --text-secondary: #839496;
+  --text-muted: #586e75;
+  --text-dim: #073642;
+
+  --accent: #b58900;
+  --accent-hover: #d4a017;
+  --accent-dim: rgba(181, 137, 0, 0.15);
+  --accent-glow: rgba(181, 137, 0, 0.4);
+
+  --error: #dc322f;
+  --error-dim: rgba(220, 50, 47, 0.15);
+  --success: #859900;
+  --warning: #b58900;
+}
+
+/* ============================================================
+   19. MONOKAI
+   ============================================================ */
+html[data-theme="monokai"] {
+  --bg: #1e1f1c;
+  --bg-elevated: #272822;
+  --surface: #31322c;
+  --surface-hover: #3a3b34;
+  --border: rgba(248, 248, 242, 0.08);
+  --border-strong: rgba(248, 248, 242, 0.18);
+
+  --text-primary: #f8f8f2;
+  --text-secondary: #c5c5bd;
+  --text-muted: #75715e;
+  --text-dim: #49483e;
+
+  --accent: #a6e22e;
+  --accent-hover: #b8ed4f;
+  --accent-dim: rgba(166, 226, 46, 0.15);
+  --accent-glow: rgba(166, 226, 46, 0.4);
+
+  --error: #f92672;
+  --error-dim: rgba(249, 38, 114, 0.15);
+  --success: #a6e22e;
+  --warning: #e6db74;
+}
+
+/* ============================================================
+   20. GITHUB DARK
+   ============================================================ */
+html[data-theme="github-dark"] {
+  --bg: #0d1117;
+  --bg-elevated: #161b22;
+  --surface: #1c2128;
+  --surface-hover: #262c36;
+  --border: rgba(240, 246, 252, 0.08);
+  --border-strong: rgba(240, 246, 252, 0.18);
+
+  --text-primary: #e6edf3;
+  --text-secondary: #9da7b3;
+  --text-muted: #6e7681;
+  --text-dim: #30363d;
+
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --accent-dim: rgba(88, 166, 255, 0.15);
+  --accent-glow: rgba(88, 166, 255, 0.4);
+
+  --error: #f85149;
+  --error-dim: rgba(248, 81, 73, 0.15);
+  --success: #3fb950;
+  --warning: #d29922;
+}
+
+/* ============================================================
+   21. MATERIAL DARK
+   ============================================================ */
+html[data-theme="material-dark"] {
+  --bg: #1a1a1a;
+  --bg-elevated: #212121;
+  --surface: #2a2a2a;
+  --surface-hover: #333333;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --text-primary: #eeffff;
+  --text-secondary: #b0bec5;
+  --text-muted: #616161;
+  --text-dim: #424242;
+
+  --accent: #82aaff;
+  --accent-hover: #9dbbff;
+  --accent-dim: rgba(130, 170, 255, 0.15);
+  --accent-glow: rgba(130, 170, 255, 0.4);
+
+  --error: #f07178;
+  --error-dim: rgba(240, 113, 120, 0.15);
+  --success: #c3e88d;
+  --warning: #ffcb6b;
+}
+
+/* ============================================================
+   22. SUNSET
+   ============================================================ */
+html[data-theme="sunset"] {
+  --bg: #1a0f14;
+  --bg-elevated: #221218;
+  --surface: #2b1820;
+  --surface-hover: #351e28;
+  --border: rgba(255, 200, 150, 0.1);
+  --border-strong: rgba(255, 200, 150, 0.22);
+
+  --text-primary: #ffe4c4;
+  --text-secondary: #d4a68c;
+  --text-muted: #7d5a4a;
+  --text-dim: #4a2f25;
+
+  --accent: #ff8c42;
+  --accent-hover: #ffa463;
+  --accent-dim: rgba(255, 140, 66, 0.15);
+  --accent-glow: rgba(255, 140, 66, 0.45);
+
+  --error: #ff4757;
+  --error-dim: rgba(255, 71, 87, 0.15);
+  --success: #7bed9f;
+  --warning: #ffd93d;
+}
+
+/* ============================================================
+   23. BOTANICAL
+   ============================================================ */
+html[data-theme="botanical"] {
+  --bg: #0f1a14;
+  --bg-elevated: #15241b;
+  --surface: #1b2e22;
+  --surface-hover: #223a2b;
+  --border: rgba(200, 230, 200, 0.08);
+  --border-strong: rgba(200, 230, 200, 0.18);
+
+  --text-primary: #d4e6d9;
+  --text-secondary: #9db8a3;
+  --text-muted: #5c7963;
+  --text-dim: #2f4636;
+
+  --accent: #7bc96f;
+  --accent-hover: #98d88e;
+  --accent-dim: rgba(123, 201, 111, 0.15);
+  --accent-glow: rgba(123, 201, 111, 0.4);
+
+  --error: #e07a5f;
+  --error-dim: rgba(224, 122, 95, 0.15);
+  --success: #7bc96f;
+  --warning: #e6c384;
+}
+
+/* ============================================================
+   24. OLIVETTI (retro editorial)
+   ============================================================ */
+html[data-theme="olivetti"] {
+  --bg: #f0ece3;
+  --bg-elevated: #f7f3ea;
+  --surface: #e8e2d5;
+  --surface-hover: #ddd6c5;
+  --border: rgba(60, 40, 20, 0.1);
+  --border-strong: rgba(60, 40, 20, 0.22);
+
+  --text-primary: #2c2416;
+  --text-secondary: #5c4f3a;
+  --text-muted: #8a7d66;
+  --text-dim: #c4b8a0;
+
+  --accent: #b85c38;
+  --accent-hover: #ce6d45;
+  --accent-dim: rgba(184, 92, 56, 0.12);
+  --accent-glow: rgba(184, 92, 56, 0.28);
+
+  --error: #a83232;
+  --error-dim: rgba(168, 50, 50, 0.12);
+  --success: #5c7a3a;
+  --warning: #b8860b;
+}
+
+/* ============================================================
+   25. CUSTOM ACCENT OVERRIDE
+   When user picks a custom accent, only --accent* tokens are
+   overridden via inline style on <html>. Everything else
+   inherits from the active theme.
+   ============================================================ */
+html[data-custom-accent="true"] {
+  /* These are set inline via JS — this selector just ensures
+     the cascade picks them up without needing !important. */
+  --accent: var(--custom-accent, var(--accent));
+  --accent-hover: var(--custom-accent-hover, var(--accent-hover));
+  --accent-dim: var(--custom-accent-dim, var(--accent-dim));
+  --accent-glow: var(--custom-accent-glow, var(--accent-glow));
+}
+
+/* ============================================================
+   26. AUTO LIGHT/DARK DETECTION
+   If no theme is set, follow OS preference.
+   (JS overrides by setting data-theme on <html>.)
+   ============================================================ */
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) {
+    --bg: #f5f5f5;
+    --bg-elevated: #ffffff;
+    --surface: #ececec;
+    --surface-hover: #e2e2e2;
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.16);
+
+    --text-primary: #1a1a1a;
+    --text-secondary: #5a5a5a;
+    --text-muted: #909090;
+    --text-dim: #c0c0c0;
+
+    --accent: #d4a30c;
+    --accent-hover: #b88d0a;
+    --accent-dim: rgba(212, 163, 12, 0.14);
+    --accent-glow: rgba(212, 163, 12, 0.25);
+
+    --error: #dc2626;
+    --error-dim: rgba(220, 38, 38, 0.12);
+    --success: #16a34a;
+    --warning: #d97706;
+  }
+}
+
+/* ============================================================
+   27. THEME TRANSITION SMOOTHING
+   When switching themes, colors cross-fade rather than snap.
+   Skipped for users who prefer reduced motion.
+   ============================================================ */
+html:not([data-reduce-motion="true"]) body,
+html:not([data-reduce-motion="true"]) .sidebar,
+html:not([data-reduce-motion="true"]) .config-bar,
+html:not([data-reduce-motion="true"]) .config-btn,
+html:not([data-reduce-motion="true"]) .card,
+html:not([data-reduce-motion="true"]) .modal,
+html:not([data-reduce-motion="true"]) .drawer,
+html:not([data-reduce-motion="true"]) .command-palette,
+html:not([data-reduce-motion="true"]) .nav-item,
+html:not([data-reduce-motion="true"]) .kbd {
+  transition:
+    background-color var(--duration-slow) var(--ease-out),
+    color var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out);
+}
