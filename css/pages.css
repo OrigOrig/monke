@@ -1,0 +1,504 @@
+/* ============================================================
+   TYPE FLOW — pages.css
+   Page-specific layouts: test, leaderboard, stats, about
+   ============================================================ */
+
+/* ============================================================
+   1. TEST PAGE
+   ============================================================ */
+
+.page--test {
+  gap: var(--space-lg);
+  max-width: var(--content-wide-max-width);
+}
+
+.page--test .page__header {
+  max-width: 100%;
+  padding: var(--space-sm) 0;
+  gap: var(--space-xs);
+}
+
+.page--test .page__title {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-normal);
+}
+
+.page--test .page__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: 70ch;
+}
+
+/* Loading state for the hero (before JS hydrates) */
+.page--test .page__title.skeleton,
+.page--test .page__subtitle.skeleton {
+  max-width: 40ch;
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   2. LEADERBOARD PAGE
+   ============================================================ */
+
+.page--leaderboard {
+  gap: var(--space-lg);
+}
+
+.leaderboard-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+/* --- Filters sidebar --- */
+.leaderboard-filters {
+  position: sticky;
+  top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-lg);
+  max-height: calc(100vh - var(--space-2xl));
+  overflow-y: auto;
+}
+
+.leaderboard-filters .filter-group:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Main content --- */
+.leaderboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.leaderboard-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  text-transform: lowercase;
+}
+
+.leaderboard-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+.leaderboard-meta .skeleton {
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+}
+
+/* --- Rank medal styles --- */
+.leaderboard-table td.col-rank {
+  font-family: var(--font-mono);
+}
+
+.leaderboard-table tr[data-rank="1"] td.col-rank {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.leaderboard-table tr[data-rank="2"] td.col-rank {
+  color: #c0c0c0;
+  font-weight: 700;
+}
+
+.leaderboard-table tr[data-rank="3"] td.col-rank {
+  color: #cd7f32;
+  font-weight: 700;
+}
+
+/* --- Rank badge (optional decorative) --- */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  background-color: var(--surface);
+  border-radius: var(--radius-sm);
+}
+
+tr[data-rank="1"] .rank-badge {
+  color: #ffd700;
+  background-color: rgba(255, 215, 0, 0.12);
+}
+
+tr[data-rank="2"] .rank-badge {
+  color: #c0c0c0;
+  background-color: rgba(192, 192, 192, 0.12);
+}
+
+tr[data-rank="3"] .rank-badge {
+  color: #cd7f32;
+  background-color: rgba(205, 127, 50, 0.12);
+}
+
+/* ============================================================
+   3. STATS PAGE
+   ============================================================ */
+
+.page--stats {
+  gap: var(--space-xl);
+}
+
+/* --- Hero stat cards --- */
+.stats-hero {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+/* --- Distribution chart --- */
+#statsDistributionCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 2px;
+  height: 220px;
+  padding: var(--space-md) 0 var(--space-xs);
+  border-bottom: var(--border-width) solid var(--border);
+  position: relative;
+}
+
+/* Individual bar */
+.chart-bar {
+  flex: 1;
+  max-width: 32px;
+  min-width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--accent) 0%,
+    var(--accent) 20%,
+    var(--accent-dim) 100%
+  );
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  position: relative;
+  transition: opacity var(--transition-fast);
+  animation: bar-grow var(--duration-slow) var(--ease-out) backwards;
+  transform-origin: bottom;
+}
+
+.chart-bar:hover {
+  opacity: 0.85;
+}
+
+.chart-bar:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-2xs) var(--space-xs);
+  background-color: var(--surface);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: var(--z-dropdown);
+  pointer-events: none;
+}
+
+/* X-axis labels */
+.chart-axis {
+  display: flex;
+  justify-content: space-around;
+  gap: 2px;
+  padding-top: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.chart-axis span {
+  flex: 1;
+  max-width: 32px;
+  text-align: center;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+/* Y-axis guide lines (optional overlay) */
+.chart-guides {
+  position: absolute;
+  inset: var(--space-md) 0 var(--space-xs) 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.chart-guide {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--text-dim);
+}
+
+.chart-guide::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
+}
+
+/* --- PB grid enhancements --- */
+#statsPBCard .pb-grid {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* --- Recent list enhancements --- */
+#statsRecentCard .recent-item {
+  grid-template-columns: 80px 1fr 70px 60px;
+}
+
+/* ============================================================
+   4. ABOUT PAGE
+   ============================================================ */
+
+.page--about {
+  max-width: 760px;
+  margin-left: 0;
+  margin-right: auto;
+  gap: var(--space-xl);
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+}
+
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.about-section__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--accent);
+  padding-bottom: var(--space-xs);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.about-section p {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  max-width: 68ch;
+}
+
+.about-section p + p {
+  margin-top: var(--space-sm);
+}
+
+.about-section a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--transition-fast);
+}
+
+.about-section a:hover {
+  text-decoration-color: var(--accent);
+}
+
+.about-section .kbd {
+  margin: 0 2px;
+  font-size: var(--text-2xs);
+}
+
+/* --- Stats glossary (definition list) --- */
+.stats-glossary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.stats-glossary dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.stats-glossary dd {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  margin-left: 0;
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--border);
+  max-width: 68ch;
+}
+
+/* ============================================================
+   5. RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .leaderboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-filters {
+    position: static;
+    max-height: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .leaderboard-filters .filter-group {
+    flex: 1;
+    min-width: 160px;
+    margin-bottom: 0;
+  }
+
+  .leaderboard-filters .filter-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: none;
+  }
+
+  .leaderboard-filters .filter-btn {
+    flex: 0 0 auto;
+    padding: var(--space-2xs) var(--space-sm);
+  }
+
+  .stats-hero {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-hero .stat-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .page--about {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .page--test .page__title {
+    font-size: var(--text-lg);
+  }
+
+  .leaderboard-filters {
+    padding: var(--space-sm);
+  }
+
+  .leaderboard-filters .filter-group {
+    min-width: 0;
+    flex: 0 0 auto;
+  }
+
+  .leaderboard-title {
+    font-size: var(--text-base);
+  }
+
+  .stats-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-hero .stat-card:last-child {
+    grid-column: auto;
+  }
+
+  .stat-card__value {
+    font-size: var(--text-2xl);
+  }
+
+  .chart-bar {
+    max-width: 20px;
+  }
+
+  .chart-axis span {
+    font-size: 9px;
+  }
+
+  .about-section__title {
+    font-size: var(--text-base);
+  }
+
+  .about-section p {
+    font-size: var(--text-sm);
+  }
+
+  .stats-glossary dd {
+    padding-left: var(--space-sm);
+    font-size: var(--text-xs);
+  }
+}
+
+/* ============================================================
+   6. KEYFRAMES
+   ============================================================ */
+
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   7. REDUCED MOTION
+   ============================================================ */
+
+html[data-reduce-motion="true"] .chart-bar {
+  animation: none !important;
+}
+
+html[data-reduce-motion="true"] .stat-card:hover {
+  transform: none !important;
+}
