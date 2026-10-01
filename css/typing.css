@@ -1,0 +1,513 @@
+/* ============================================================
+   TYPE FLOW — typing.css
+   The typing surface: live stats, words, letters, caret,
+   focus overlay, footer hints
+   ============================================================ */
+
+/* ============================================================
+   1. TYPING WRAP (outer container)
+   ============================================================ */
+
+.typing-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-xl) var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-xl);
+  position: relative;
+  transition: border-color var(--transition-base);
+}
+
+.typing-wrap:focus-within {
+  border-color: var(--border-strong);
+}
+
+/* ============================================================
+   2. LIVE STATS
+   ============================================================ */
+
+.live-stats {
+  display: flex;
+  gap: var(--space-xl);
+  align-items: baseline;
+  padding-bottom: var(--space-md);
+  border-bottom: var(--border-width) solid var(--border);
+  transition: opacity var(--transition-base);
+}
+
+.live-stats.hidden {
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+
+.live-stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.live-stat__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  order: 2;
+}
+
+.live-stat__value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  transition: color var(--transition-fast);
+  order: 1;
+  min-width: 2ch;
+}
+
+.live-stat__value.skeleton {
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  font-size: var(--text-md);
+}
+
+/* Live stat color feedback during test */
+.live-stat--warn .live-stat__value {
+  color: var(--warning);
+}
+
+.live-stat--error .live-stat__value {
+  color: var(--error);
+}
+
+/* ============================================================
+   3. TYPING CONTAINER
+   ============================================================ */
+
+.typing-container {
+  position: relative;
+  min-height: 220px;
+  padding: var(--space-lg) 0;
+  cursor: text;
+  outline: none;
+}
+
+.typing-container:focus {
+  outline: none;
+}
+
+/* ============================================================
+   4. WORDS
+   ============================================================ */
+
+.words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em 0.9em;
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+  color: var(--text-dim);
+  user-select: none;
+  -webkit-user-select: none;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* --- Individual word --- */
+.word {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  position: relative;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.word.active {
+  border-bottom-color: var(--accent);
+}
+
+.word.errored {
+  border-bottom-color: var(--error-dim);
+}
+
+/* --- Letter --- */
+.letter {
+  display: inline-block;
+  position: relative;
+  color: var(--text-dim);
+  transition: color var(--duration-instant) linear;
+  will-change: color;
+}
+
+.letter.correct {
+  color: var(--text-primary);
+}
+
+.letter.incorrect {
+  color: var(--error);
+}
+
+.letter.incorrect::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background-color: var(--error);
+  border-radius: var(--radius-full);
+}
+
+.letter.extra {
+  color: var(--error);
+  opacity: 0.7;
+}
+
+.letter.missed {
+  color: var(--error);
+  text-decoration: underline;
+  text-decoration-color: var(--error);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  opacity: 0.85;
+}
+
+/* Blind mode: hide correctness coloring */
+.typing-wrap[data-blind="true"] .letter.correct {
+  color: var(--text-primary);
+}
+
+.typing-wrap[data-blind="true"] .letter.incorrect {
+  color: var(--text-primary);
+}
+
+.typing-wrap[data-blind="true"] .letter.incorrect::after {
+  display: none;
+}
+
+/* ============================================================
+   5. CARET
+   ============================================================ */
+
+.caret {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 1.5em;
+  background-color: var(--accent);
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  z-index: 5;
+  will-change: left, top;
+  transition:
+    left var(--duration-fast) var(--ease-snap),
+    top var(--duration-fast) var(--ease-snap),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+/* Smooth variant: springier interpolation */
+.caret.smooth {
+  transition:
+    left var(--duration-base) var(--ease-spring),
+    top var(--duration-base) var(--ease-spring),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+/* Block variant: block behind current letter */
+.caret.block {
+  width: 0.6em;
+  background-color: var(--accent);
+  opacity: 0.55;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Underline variant: sits below the letter */
+.caret.underline {
+  width: 0.6em;
+  height: 3px;
+  background-color: var(--accent);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Off variant */
+.caret.off {
+  display: none;
+}
+
+/* Blink when idle */
+.caret.blink {
+  animation: caret-blink 1s steps(2, start) infinite;
+}
+
+.caret.smooth.blink {
+  animation: caret-pulse 1.2s var(--ease-in-out) infinite;
+}
+
+/* ============================================================
+   6. FOCUS OVERLAY
+   ============================================================ */
+
+.focus-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background-color: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: var(--radius-xl);
+  z-index: 10;
+  cursor: pointer;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    backdrop-filter var(--duration-base) var(--ease-out);
+}
+
+.focus-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(0);
+}
+
+.focus-overlay__text {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-align: center;
+  line-height: 1.5;
+  user-select: none;
+}
+
+.focus-overlay__text::before {
+  content: '⌨';
+  display: block;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-sm);
+  opacity: 0.4;
+}
+
+/* ============================================================
+   7. TEST FOOTER (hints)
+   ============================================================ */
+
+.test-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  justify-content: center;
+  padding-top: var(--space-md);
+  border-top: var(--border-width) solid var(--border);
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.hint .kbd {
+  font-size: var(--text-2xs);
+  padding: 0.1em 0.4em;
+  min-width: 1.4em;
+}
+
+.hint__sep {
+  opacity: 0.6;
+}
+
+.hint__label {
+  margin-left: var(--space-2xs);
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   8. ZEN MODE
+   ============================================================ */
+
+.words[data-zen="true"] {
+  justify-content: flex-start;
+  min-height: 180px;
+}
+
+.zen-placeholder {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  font-style: italic;
+  letter-spacing: var(--tracking-normal);
+}
+
+/* ============================================================
+   9. LINE-WRAP TRANSITION
+   When a word moves to a new line, animate it sliding up
+   ============================================================ */
+
+.words.wrapping .word {
+  animation: word-wrap-up var(--duration-base) var(--ease-out);
+}
+
+/* ============================================================
+   10. TYPING STATE FEEDBACK
+   ============================================================ */
+
+/* Error streak shake on the container */
+.typing-container.shake {
+  animation: shake 180ms var(--ease-in-out);
+}
+
+/* Combo pulse on word completion */
+.words.combo-pulse .word.active {
+  animation: combo-pulse 320ms var(--ease-spring);
+}
+
+/* ============================================================
+   11. KEYFRAMES
+   ============================================================ */
+
+@keyframes caret-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+@keyframes word-wrap-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px); }
+  40%      { transform: translateX(4px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+
+@keyframes combo-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* ============================================================
+   12. RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .words {
+    font-size: var(--text-md);
+    line-height: 1.7;
+  }
+
+  .live-stats {
+    gap: var(--space-lg);
+  }
+
+  .live-stat__value {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .typing-wrap {
+    padding: var(--space-lg) var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .typing-container {
+    min-height: 180px;
+    padding: var(--space-md) 0;
+  }
+
+  .words {
+    font-size: var(--text-base);
+    line-height: 1.7;
+    gap: 0.3em 0.7em;
+  }
+
+  .live-stats {
+    gap: var(--space-md);
+    padding-bottom: var(--space-sm);
+  }
+
+  .live-stat__value {
+    font-size: var(--text-base);
+  }
+
+  .test-footer {
+    gap: var(--space-sm);
+  }
+
+  .hint__label {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .words {
+    font-size: var(--text-sm);
+  }
+
+  .live-stat__label {
+    display: none;
+  }
+}
+
+/* ============================================================
+   13. REDUCED MOTION
+   ============================================================ */
+
+html[data-reduce-motion="true"] .caret,
+html[data-reduce-motion="true"] .caret.smooth,
+html[data-reduce-motion="true"] .word,
+html[data-reduce-motion="true"] .letter {
+  transition: none !important;
+}
+
+html[data-reduce-motion="true"] .caret.blink,
+html[data-reduce-motion="true"] .caret.smooth.blink {
+  animation: none !important;
+  opacity: 1;
+}
+
+html[data-reduce-motion="true"] .words.wrapping .word,
+html[data-reduce-motion="true"] .typing-container.shake,
+html[data-reduce-motion="true"] .words.combo-pulse .word.active {
+  animation: none !important;
+}
