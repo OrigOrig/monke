@@ -1,888 +1,725 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="serika-dark">
+<html lang="en" data-theme="serika-dark" data-page="test">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monkeytype Clone · Vanilla Typing Test</title>
-  <style>
-    /* ============================================================
-       GLOBAL RESET + CSS VARIABLES (THEME ENGINE)
-       ============================================================ */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      /* Default theme: Serika Dark */
-      --bg-color: #323437;
-      --main-color: #e2b714;
-      --caret-color: #e2b714;
-      --sub-color: #646669;
-      --sub-alt-color: #2c2e31;
-      --error-color: #ca4754;
-      --error-extra-color: #7e2a33;
-      --text-color: #d1d0c5;
-      --font-family: 'Roboto Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace;
-      --font-size: 1.6rem;
-      --line-height: 1.6;
-      --transition-speed: 0.15s;
-      --border-radius: 8px;
-      --max-width: 1100px;
-    }
-
-    /* Theme definitions */
-    [data-theme="serika-dark"] {
-      --bg-color: #323437;
-      --main-color: #e2b714;
-      --caret-color: #e2b714;
-      --sub-color: #646669;
-      --sub-alt-color: #2c2e31;
-      --error-color: #ca4754;
-      --error-extra-color: #7e2a33;
-      --text-color: #d1d0c5;
-    }
-    [data-theme="dracula"] {
-      --bg-color: #282a36;
-      --main-color: #bd93f9;
-      --caret-color: #f8f8f2;
-      --sub-color: #6272a4;
-      --sub-alt-color: #44475a;
-      --error-color: #ff5555;
-      --error-extra-color: #ff555588;
-      --text-color: #f8f8f2;
-    }
-    [data-theme="nord"] {
-      --bg-color: #2e3440;
-      --main-color: #88c0d0;
-      --caret-color: #88c0d0;
-      --sub-color: #4c566a;
-      --sub-alt-color: #3b4252;
-      --error-color: #bf616a;
-      --error-extra-color: #bf616a88;
-      --text-color: #eceff4;
-    }
-    [data-theme="cyberpunk"] {
-      --bg-color: #0a0e17;
-      --main-color: #f7e05e;
-      --caret-color: #f7e05e;
-      --sub-color: #3a4a6b;
-      --sub-alt-color: #141b2b;
-      --error-color: #ff2a6d;
-      --error-extra-color: #ff2a6d88;
-      --text-color: #c1c9e0;
-    }
-    [data-theme="matrix"] {
-      --bg-color: #000000;
-      --main-color: #00ff41;
-      --caret-color: #00ff41;
-      --sub-color: #003b00;
-      --sub-alt-color: #0d0d0d;
-      --error-color: #ff0000;
-      --error-extra-color: #ff000088;
-      --text-color: #00ff41;
-    }
-    [data-theme="bento"] {
-      --bg-color: #2c2e31;
-      --main-color: #ffb86c;
-      --caret-color: #ffb86c;
-      --sub-color: #6272a4;
-      --sub-alt-color: #1e1f22;
-      --error-color: #ff5555;
-      --error-extra-color: #ff555588;
-      --text-color: #f8f8f2;
-    }
-    [data-theme="chalk-light"] {
-      --bg-color: #f5f5f5;
-      --main-color: #2c2e31;
-      --caret-color: #2c2e31;
-      --sub-color: #b0b0b0;
-      --sub-alt-color: #e0e0e0;
-      --error-color: #ca4754;
-      --error-extra-color: #ca475488;
-      --text-color: #1a1a1a;
-    }
-
-    body {
-      background: var(--bg-color);
-      color: var(--text-color);
-      font-family: var(--font-family);
-      font-size: var(--font-size);
-      line-height: var(--line-height);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: background var(--transition-speed), color var(--transition-speed);
-      padding: 1rem;
-      overflow-x: hidden;
-    }
-
-    /* ============================================================
-       LAYOUT
-       ============================================================ */
-    .app {
-      width: 100%;
-      max-width: var(--max-width);
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      position: relative;
-    }
-
-    /* Header */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--main-color);
-      user-select: none;
-    }
-
-    .logo svg {
-      width: 32px;
-      height: 32px;
-      fill: var(--main-color);
-    }
-
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .icon-btn {
-      background: transparent;
-      border: none;
-      color: var(--sub-color);
-      cursor: pointer;
-      padding: 0.4rem;
-      border-radius: var(--border-radius);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color var(--transition-speed), background var(--transition-speed);
-      font-size: 0.9rem;
-      font-family: var(--font-family);
-      gap: 0.3rem;
-    }
-
-    .icon-btn:hover {
-      color: var(--text-color);
-      background: var(--sub-alt-color);
-    }
-
-    .icon-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
-    }
-
-    /* Test config bar */
-    .test-config {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      padding: 0.75rem 1rem;
-      background: var(--sub-alt-color);
-      border-radius: var(--border-radius);
-      transition: background var(--transition-speed);
-    }
-
-    .config-group {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-    }
-
-    .config-btn {
-      background: transparent;
-      border: none;
-      color: var(--sub-color);
-      font-family: var(--font-family);
-      font-size: 0.85rem;
-      padding: 0.3rem 0.7rem;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      transition: color var(--transition-speed), background var(--transition-speed);
-      white-space: nowrap;
-    }
-
-    .config-btn:hover {
-      color: var(--text-color);
-      background: var(--sub-color);
-    }
-
-    .config-btn.active {
-      color: var(--bg-color);
-      background: var(--main-color);
-      font-weight: 600;
-    }
-
-    .config-divider {
-      width: 1px;
-      height: 20px;
-      background: var(--sub-color);
-      opacity: 0.4;
-    }
-
-    /* Typing area */
-    .typing-container {
-      position: relative;
-      min-height: 180px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 1rem 0;
-    }
-
-    .live-stats {
-      display: flex;
-      gap: 1.5rem;
-      justify-content: flex-start;
-      font-size: 1rem;
-      color: var(--sub-color);
-      margin-bottom: 0.5rem;
-      min-height: 1.5rem;
-    }
-
-    .live-stats span {
-      color: var(--main-color);
-      font-weight: 600;
-    }
-
-    #words-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 0.8rem;
-      font-size: var(--font-size);
-      line-height: var(--line-height);
-      letter-spacing: 0.02em;
-      color: var(--sub-color);
-      user-select: none;
-      outline: none;
-    }
-
-    .word {
-      display: flex;
-      white-space: nowrap;
-      border-bottom: 2px solid transparent;
-      transition: border-color 0.1s;
-    }
-
-    .word.active {
-      border-bottom-color: var(--main-color);
-    }
-
-    .letter {
-      transition: color 0.05s;
-      position: relative;
-    }
-
-    .letter.correct {
-      color: var(--text-color);
-    }
-
-    .letter.incorrect {
-      color: var(--error-color);
-    }
-
-    .letter.extra {
-      color: var(--error-extra-color);
-    }
-
-    .letter.missed {
-      color: var(--error-color);
-      text-decoration: underline;
-      text-decoration-color: var(--error-color);
-      text-underline-offset: 4px;
-    }
-
-    /* Caret */
-    .caret {
-      position: absolute;
-      width: 2px;
-      height: 1.4em;
-      background: var(--caret-color);
-      transition: left 0.08s ease, top 0.08s ease;
-      pointer-events: none;
-      will-change: left, top;
-      border-radius: 1px;
-    }
-
-    .caret.smooth {
-      transition: left 0.12s cubic-bezier(0.25, 0.1, 0.25, 1), top 0.12s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-
-    .caret.block {
-      width: 0.6em;
-      background: var(--caret-color);
-      opacity: 0.6;
-      border-radius: 2px;
-    }
-
-    .caret.underline {
-      height: 2px;
-      background: var(--caret-color);
-      width: 0.6em;
-      border-radius: 0;
-    }
-
-    .caret.off {
-      display: none;
-    }
-
-    /* Focus overlay */
-    .focus-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-color);
-      color: var(--sub-color);
-      font-size: 1.2rem;
-      cursor: pointer;
-      z-index: 10;
-      border-radius: var(--border-radius);
-      transition: opacity 0.2s;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    .focus-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    /* Results modal */
-    .results-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 1rem;
-      backdrop-filter: blur(4px);
-    }
-
-    .results-overlay.show {
-      display: flex;
-    }
-
-    .results-modal {
-      background: var(--bg-color);
-      border-radius: var(--border-radius);
-      padding: 2rem;
-      max-width: 700px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--sub-alt-color);
-    }
-
-    .results-modal h2 {
-      color: var(--main-color);
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      font-weight: 500;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .result-item {
-      background: var(--sub-alt-color);
-      padding: 0.75rem 1rem;
-      border-radius: var(--border-radius);
-    }
-
-    .result-label {
-      font-size: 0.75rem;
-      color: var(--sub-color);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .result-value {
-      font-size: 1.6rem;
-      color: var(--main-color);
-      font-weight: 600;
-    }
-
-    .result-sub {
-      font-size: 0.8rem;
-      color: var(--sub-color);
-    }
-
-    .chart-container {
-      width: 100%;
-      height: 200px;
-      margin: 1rem 0;
-      background: var(--sub-alt-color);
-      border-radius: var(--border-radius);
-      padding: 0.5rem;
-      position: relative;
-    }
-
-    .chart-container svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .results-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-
-    .btn {
-      background: var(--sub-alt-color);
-      color: var(--text-color);
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: var(--border-radius);
-      font-family: var(--font-family);
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: background var(--transition-speed), color var(--transition-speed);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .btn:hover {
-      background: var(--sub-color);
-    }
-
-    .btn.primary {
-      background: var(--main-color);
-      color: var(--bg-color);
-      font-weight: 600;
-    }
-
-    .btn.primary:hover {
-      filter: brightness(1.1);
-    }
-
-    /* Command palette */
-    .command-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: none;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 10vh;
-      z-index: 200;
-      backdrop-filter: blur(4px);
-    }
-
-    .command-overlay.show {
-      display: flex;
-    }
-
-    .command-modal {
-      background: var(--bg-color);
-      border-radius: var(--border-radius);
-      width: 100%;
-      max-width: 600px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--sub-alt-color);
-      overflow: hidden;
-    }
-
-    .command-input {
-      width: 100%;
-      padding: 1rem 1.2rem;
-      background: var(--sub-alt-color);
-      border: none;
-      color: var(--text-color);
-      font-family: var(--font-family);
-      font-size: 1.1rem;
-      outline: none;
-    }
-
-    .command-input::placeholder {
-      color: var(--sub-color);
-    }
-
-    .command-list {
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 0.5rem;
-    }
-
-    .command-item {
-      padding: 0.6rem 1rem;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--sub-color);
-      transition: background var(--transition-speed), color var(--transition-speed);
-      font-size: 0.9rem;
-    }
-
-    .command-item:hover,
-    .command-item.selected {
-      background: var(--sub-alt-color);
-      color: var(--text-color);
-    }
-
-    .command-item .category {
-      font-size: 0.75rem;
-      color: var(--sub-color);
-      opacity: 0.7;
-    }
-
-    /* Settings drawer */
-    .settings-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      z-index: 150;
-    }
-
-    .settings-overlay.show {
-      display: block;
-    }
-
-    .settings-drawer {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 100%;
-      max-width: 500px;
-      height: 100%;
-      background: var(--bg-color);
-      border-left: 1px solid var(--sub-alt-color);
-      padding: 2rem;
-      overflow-y: auto;
-      transform: translateX(100%);
-      transition: transform 0.25s ease;
-      z-index: 160;
-      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .settings-drawer.open {
-      transform: translateX(0);
-    }
-
-    .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .settings-header h2 {
-      color: var(--main-color);
-      font-size: 1.4rem;
-      font-weight: 500;
-    }
-
-    .settings-section {
-      margin-bottom: 2rem;
-    }
-
-    .settings-section h3 {
-      color: var(--sub-color);
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 0.75rem;
-      border-bottom: 1px solid var(--sub-alt-color);
-      padding-bottom: 0.4rem;
-    }
-
-    .setting-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .setting-label {
-      color: var(--text-color);
-      font-size: 0.9rem;
-    }
-
-    .setting-desc {
-      color: var(--sub-color);
-      font-size: 0.75rem;
-      width: 100%;
-      margin-top: -0.2rem;
-    }
-
-    .setting-control {
-      display: flex;
-      gap: 0.3rem;
-      flex-wrap: wrap;
-    }
-
-    .setting-control .config-btn {
-      font-size: 0.8rem;
-      padding: 0.25rem 0.6rem;
-    }
-
-    /* Theme grid */
-    .theme-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 0.5rem;
-    }
-
-    .theme-swatch {
-      padding: 0.6rem;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color var(--transition-speed);
-      text-align: center;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: #fff;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
-
-    .theme-swatch.active {
-      border-color: var(--main-color);
-    }
-
-    /* Hidden input for mobile */
-    #mobile-input {
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-      height: 0;
-      width: 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      :root {
-        --font-size: 1.2rem;
-      }
-      .test-config {
-        padding: 0.5rem;
-        gap: 0.4rem;
-      }
-      .config-btn {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-      }
-      .results-modal {
-        padding: 1.2rem;
-      }
-      .results-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .settings-drawer {
-        padding: 1.2rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      :root {
-        --font-size: 1rem;
-      }
-      .logo {
-        font-size: 1.3rem;
-      }
-      .logo svg {
-        width: 24px;
-        height: 24px;
-      }
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: var(--bg-color);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: var(--sub-color);
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--main-color);
-    }
-
-    /* Animations */
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    .caret.blink {
-      animation: pulse 1s step-end infinite;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="description" content="A modern, minimal typing test. Track your speed, accuracy, and consistency across time, words, quotes, and custom text modes." />
+  <meta name="color-scheme" content="dark light" />
+
+  <title>Typeflow — Modern Typing Test</title>
+
+  <!-- Favicon (inline SVG, no external request) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0a0a'/%3E%3Cpath d='M28 34h44v8H28zm0 14h32v8H28zm0 14h44v8H28z' fill='%23e2b714'/%3E%3C/svg%3E" />
+
+  <!-- Fonts: preconnect + preload for zero-flash -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="preload"
+    as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+  />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    />
+  </noscript>
+
+  <!-- Stylesheets (order matters: base → theme → components → pages → animations) -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/typing.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/animations.css" />
 </head>
+
 <body>
-  <div class="app">
-    <!-- Header -->
-    <header>
-      <div class="logo">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6zm4 4h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+  <!-- ============================================================
+       SCANLINE OVERLAY (disabled by default, toggled in settings)
+       ============================================================ -->
+  <div class="scanline-overlay" id="scanlineOverlay" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       APP SHELL
+       ============================================================ -->
+  <div class="app" id="app">
+
+    <!-- ==========================================================
+         SIDEBAR NAVIGATION
+         ========================================================== -->
+    <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+      <div class="sidebar__brand">
+        <a href="#/test" class="brand" data-nav="test" aria-label="Typeflow home">
+          <svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true">
+            <rect width="100" height="100" rx="20" fill="currentColor" opacity="0.1" />
+            <path d="M28 34h44v8H28zm0 14h32v8H28zm0 14h44v8H28z" fill="currentColor" />
+          </svg>
+          <span class="brand__name">typeflow</span>
+        </a>
+      </div>
+
+      <nav class="sidebar__nav" role="navigation">
+        <a href="#/test" class="nav-item" data-nav="test" aria-label="Typing test">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
+            <path d="M7 10h2M11 10h2M15 10h2M7 14h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+          <span class="nav-item__label">test</span>
+        </a>
+        <a href="#/leaderboard" class="nav-item" data-nav="leaderboard" aria-label="Leaderboard">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
+            <path d="M17 5h2a2 2 0 0 1 0 4h-2M7 5H5a2 2 0 0 0 0 4h2" fill="none" stroke="currentColor" stroke-width="1.75" />
+          </svg>
+          <span class="nav-item__label">leaderboard</span>
+        </a>
+        <a href="#/stats" class="nav-item" data-nav="stats" aria-label="Statistics">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="nav-item__label">stats</span>
+        </a>
+        <a href="#/about" class="nav-item" data-nav="about" aria-label="About">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75" />
+            <path d="M12 8h.01M11 12h1v4h1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+          <span class="nav-item__label">about</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <button class="icon-btn" id="commandBtn" aria-label="Open command palette (Esc)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <kbd class="kbd">esc</kbd>
+        </button>
+        <button class="icon-btn" id="settingsBtn" aria-label="Open settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.75" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ==========================================================
+         MAIN CONTENT AREA
+         ========================================================== -->
+    <main class="main" id="main">
+
+      <!-- ========================================================
+           PAGE: TEST
+           ======================================================== -->
+      <section class="page page--test" id="page-test" data-page="test" aria-label="Typing test">
+
+        <header class="page__header">
+          <h1 class="page__title" id="testTitle">
+            know exactly how fast you type.
+          </h1>
+          <p class="page__subtitle" id="testSubtitle">
+            Pick a mode. Start typing. See your speed, accuracy, and consistency in real time.
+          </p>
+        </header>
+
+        <!-- Test Config Bar -->
+        <div class="config-bar" id="configBar" role="toolbar" aria-label="Test configuration">
+          <div class="config-group" id="modeGroup" role="radiogroup" aria-label="Test mode">
+            <button class="config-btn active" data-mode="time" role="radio" aria-checked="true">
+              <span class="config-btn__icon" aria-hidden="true">⏱</span>
+              <span class="config-btn__label">time</span>
+            </button>
+            <button class="config-btn" data-mode="words" role="radio" aria-checked="false">
+              <span class="config-btn__icon" aria-hidden="true">A</span>
+              <span class="config-btn__label">words</span>
+            </button>
+            <button class="config-btn" data-mode="quote" role="radio" aria-checked="false">
+              <span class="config-btn__icon" aria-hidden="true">❝</span>
+              <span class="config-btn__label">quote</span>
+            </button>
+            <button class="config-btn" data-mode="zen" role="radio" aria-checked="false">
+              <span class="config-btn__icon" aria-hidden="true">🧘</span>
+              <span class="config-btn__label">zen</span>
+            </button>
+            <button class="config-btn" data-mode="custom" role="radio" aria-checked="false">
+              <span class="config-btn__icon" aria-hidden="true">✎</span>
+              <span class="config-btn__label">custom</span>
+            </button>
+          </div>
+
+          <div class="config-divider" aria-hidden="true"></div>
+
+          <div class="config-group" id="subModeGroup" role="radiogroup" aria-label="Test length">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <div class="config-divider" aria-hidden="true"></div>
+
+          <div class="config-group" role="group" aria-label="Modifiers">
+            <button class="config-btn" id="punctuationBtn" data-toggle="punctuation" aria-pressed="false">
+              <span class="config-btn__icon" aria-hidden="true">@</span>
+              <span class="config-btn__label">punctuation</span>
+            </button>
+            <button class="config-btn" id="numbersBtn" data-toggle="numbers" aria-pressed="false">
+              <span class="config-btn__icon" aria-hidden="true">#</span>
+              <span class="config-btn__label">numbers</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Typing Area -->
+        <div class="typing-wrap">
+          <div class="live-stats" id="liveStats" role="status" aria-live="polite">
+            <div class="live-stat" data-stat="time">
+              <span class="live-stat__label">time</span>
+              <span class="live-stat__value skeleton" id="liveTime">— — —</span>
+            </div>
+            <div class="live-stat" data-stat="wpm">
+              <span class="live-stat__label">wpm</span>
+              <span class="live-stat__value skeleton" id="liveWpm">— — —</span>
+            </div>
+            <div class="live-stat" data-stat="acc">
+              <span class="live-stat__label">acc</span>
+              <span class="live-stat__value skeleton" id="liveAcc">— — —</span>
+            </div>
+          </div>
+
+          <div class="typing-container" id="typingContainer" tabindex="0" role="textbox" aria-label="Typing area" aria-multiline="true">
+            <div id="wordsContainer" class="words" aria-hidden="true"></div>
+            <div class="caret" id="caret" aria-hidden="true"></div>
+            <div class="focus-overlay" id="focusOverlay" role="button" tabindex="0" aria-label="Click or press any key to focus the typing area">
+              <span class="focus-overlay__text">click here or press any key to focus</span>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            id="mobileInput"
+            class="mobile-input"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-hidden="true"
+            tabindex="-1"
+          />
+        </div>
+
+        <!-- Footer Hints -->
+        <footer class="test-footer" aria-label="Keyboard shortcuts">
+          <div class="hint">
+            <kbd class="kbd">tab</kbd>
+            <span class="hint__sep">or</span>
+            <kbd class="kbd">enter</kbd>
+            <span class="hint__label">restart test</span>
+          </div>
+          <div class="hint">
+            <kbd class="kbd">esc</kbd>
+            <span class="hint__sep">or</span>
+            <kbd class="kbd">ctrl</kbd>+<kbd class="kbd">shift</kbd>+<kbd class="kbd">p</kbd>
+            <span class="hint__label">command line</span>
+          </div>
+        </footer>
+
+      </section>
+
+      <!-- ========================================================
+           PAGE: LEADERBOARD
+           ======================================================== -->
+      <section class="page page--leaderboard" id="page-leaderboard" data-page="leaderboard" hidden aria-label="Leaderboard">
+        <header class="page__header">
+          <h1 class="page__title"># leaderboard</h1>
+          <p class="page__subtitle">
+            Your personal bests across every test configuration. All results stored locally on your device.
+          </p>
+        </header>
+
+        <div class="leaderboard-layout">
+          <!-- Filters sidebar -->
+          <aside class="leaderboard-filters" aria-label="Leaderboard filters">
+            <div class="filter-group">
+              <h3 class="filter-group__title">scope</h3>
+              <button class="filter-btn active" data-scope="all-time">all-time</button>
+              <button class="filter-btn" data-scope="weekly">weekly</button>
+              <button class="filter-btn" data-scope="daily">daily</button>
+            </div>
+
+            <div class="filter-group">
+              <h3 class="filter-group__title">mode</h3>
+              <div id="leaderboardModeFilter" class="filter-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </aside>
+
+          <!-- Main table -->
+          <div class="leaderboard-content">
+            <div class="leaderboard-header">
+              <h2 class="leaderboard-title" id="leaderboardTitle">all-time time 15</h2>
+              <div class="leaderboard-meta" id="leaderboardMeta">
+                <span class="skeleton">— — —</span>
+              </div>
+            </div>
+
+            <div class="leaderboard-table-wrap">
+              <table class="leaderboard-table" id="leaderboardTable" aria-label="Leaderboard entries">
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-rank">#</th>
+                    <th scope="col" class="col-name">name</th>
+                    <th scope="col" class="col-wpm">wpm</th>
+                    <th scope="col" class="col-acc">accuracy</th>
+                    <th scope="col" class="col-raw">raw</th>
+                    <th scope="col" class="col-cons">consistency</th>
+                    <th scope="col" class="col-date">date</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                  <!-- Populated by JS -->
+                  <tr class="leaderboard-empty">
+                    <td colspan="7">
+                      <div class="empty-state">
+                        <div class="empty-state__icon" aria-hidden="true">—</div>
+                        <p class="empty-state__text">No results yet. Complete a test to appear here.</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PAGE: STATS
+           ======================================================== -->
+      <section class="page page--stats" id="page-stats" data-page="stats" hidden aria-label="Statistics">
+        <header class="page__header">
+          <h1 class="page__title"># stats</h1>
+          <p class="page__subtitle">
+            Your lifetime typing journey — every test, every keystroke, all in one place.
+          </p>
+        </header>
+
+        <!-- Lifetime totals -->
+        <div class="stats-hero" id="statsHero">
+          <div class="stat-card">
+            <span class="stat-card__label">total tests started</span>
+            <span class="stat-card__value skeleton" id="statTestsStarted">— — —</span>
+            <span class="stat-card__sub" id="statTestsStartedSub">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">total typing time</span>
+            <span class="stat-card__value skeleton" id="statTypingTime">— — —</span>
+            <span class="stat-card__sub" id="statTypingTimeSub">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">total tests completed</span>
+            <span class="stat-card__value skeleton" id="statTestsCompleted">— — —</span>
+            <span class="stat-card__sub" id="statTestsCompletedSub">—</span>
+          </div>
+        </div>
+
+        <!-- WPM Distribution -->
+        <div class="stats-card" id="statsDistributionCard">
+          <h2 class="stats-card__title">wpm distribution</h2>
+          <p class="stats-card__subtitle" id="statsDistributionSub">
+            <span class="skeleton">— — —</span>
+          </p>
+          <div class="stats-chart" id="statsDistributionChart" role="img" aria-label="WPM distribution histogram">
+            <!-- Populated by JS -->
+            <div class="skeleton-chart" aria-hidden="true">
+              <!-- Skeleton bars shown before data loads -->
+              <div class="skeleton-bar" style="height: 20%"></div>
+              <div class="skeleton-bar" style="height: 40%"></div>
+              <div class="skeleton-bar" style="height: 65%"></div>
+              <div class="skeleton-bar" style="height: 85%"></div>
+              <div class="skeleton-bar" style="height: 100%"></div>
+              <div class="skeleton-bar" style="height: 80%"></div>
+              <div class="skeleton-bar" style="height: 55%"></div>
+              <div class="skeleton-bar" style="height: 35%"></div>
+              <div class="skeleton-bar" style="height: 20%"></div>
+              <div class="skeleton-bar" style="height: 10%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Bests -->
+        <div class="stats-card" id="statsPBCard">
+          <h2 class="stats-card__title">personal bests</h2>
+          <div class="pb-grid" id="pbGrid">
+            <div class="pb-item">
+              <span class="pb-item__mode">time 15</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+            <div class="pb-item">
+              <span class="pb-item__mode">time 30</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+            <div class="pb-item">
+              <span class="pb-item__mode">time 60</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+            <div class="pb-item">
+              <span class="pb-item__mode">words 25</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+            <div class="pb-item">
+              <span class="pb-item__mode">words 50</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+            <div class="pb-item">
+              <span class="pb-item__mode">quote medium</span>
+              <span class="pb-item__value skeleton">— — —</span>
+              <span class="pb-item__date">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="stats-card" id="statsRecentCard">
+          <h2 class="stats-card__title">recent activity</h2>
+          <div class="recent-list" id="recentList">
+            <div class="recent-item">
+              <span class="recent-item__time skeleton">— — —</span>
+              <span class="recent-item__mode skeleton">— — —</span>
+              <span class="recent-item__wpm skeleton">— — —</span>
+              <span class="recent-item__acc skeleton">— — —</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PAGE: ABOUT
+           ======================================================== -->
+      <section class="page page--about" id="page-about" data-page="about" hidden aria-label="About">
+        <header class="page__header">
+          <h1 class="page__title"># about</h1>
+          <p class="page__subtitle">
+            A modern, minimal typing test built with vanilla web standards.
+          </p>
+        </header>
+
+        <article class="about-content">
+          <section class="about-section">
+            <h2 class="about-section__title">what is typeflow?</h2>
+            <p>
+              Typeflow is a minimalist and customizable typing test. It features multiple test modes,
+              a personal stats system to save your typing history, and user-configurable features such as
+              themes, sounds, a smooth caret, and more. It attempts to emulate the experience of natural
+              keyboard typing during a typing test, by unobtrusively presenting the text prompts and
+              displaying typed characters in-place, providing straightforward, real-time feedback on
+              typos, speed, and accuracy.
+            </p>
+            <p>
+              Test yourself in various modes, track your progress and improve your speed.
+            </p>
+          </section>
+
+          <section class="about-section">
+            <h2 class="about-section__title"># word set</h2>
+            <p>
+              By default, this website uses the most common 200 words in the English language to
+              generate its tests. You can change to an expanded set (1000 most common words) in the
+              options, or change the language entirely.
+            </p>
+          </section>
+
+          <section class="about-section">
+            <h2 class="about-section__title"># keybinds</h2>
+            <p>
+              You can use <kbd class="kbd">tab</kbd> or <kbd class="kbd">enter</kbd> to restart the
+              typing test. Open the command line by pressing <kbd class="kbd">esc</kbd> or
+              <kbd class="kbd">ctrl</kbd>+<kbd class="kbd">shift</kbd>+<kbd class="kbd">p</kbd> —
+              there you can access all the functionality you need without touching your mouse.
+            </p>
+          </section>
+
+          <section class="about-section">
+            <h2 class="about-section__title"># stats</h2>
+            <dl class="stats-glossary">
+              <dt>wpm</dt>
+              <dd>Total number of characters in the correctly typed words (including spaces), divided by 5 and normalised to 60 seconds.</dd>
+
+              <dt>raw wpm</dt>
+              <dd>Calculated just like wpm, but also includes incorrect words.</dd>
+
+              <dt>acc</dt>
+              <dd>Percentage of correctly pressed keys.</dd>
+
+              <dt>char</dt>
+              <dd>Correct characters / incorrect characters. Calculated after the test has ended.</dd>
+
+              <dt>consistency</dt>
+              <dd>Based on the variance of your raw wpm. Closer to 100% is better. Calculated using the coefficient of variation of raw wpm and mapped onto a scale from 0 to 100.</dd>
+            </dl>
+          </section>
+
+          <section class="about-section">
+            <h2 class="about-section__title"># results screen</h2>
+            <p>
+              After completing a test you will be able to see your wpm, raw wpm, accuracy, character
+              stats, test length, and test info. You can also see a graph of your wpm and raw over the
+              duration of the test. Remember that the wpm line is a global, momentary average, while the
+              raw wpm line is a local, momentary value (meaning if you stop, the value is 0).
+            </p>
+          </section>
+
+          <section class="about-section">
+            <h2 class="about-section__title"># tech</h2>
+            <p>
+              Built with vanilla HTML, CSS, and JavaScript. No frameworks. No build step. No tracking.
+              No server. All data is stored locally on your device.
+            </p>
+            <p>
+              <a href="#/test" class="link" data-nav="test">← back to test</a>
+            </p>
+          </section>
+        </article>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: RESULTS
+       ============================================================ -->
+  <div class="modal-overlay" id="resultsOverlay" role="dialog" aria-modal="true" aria-labelledby="resultsTitle" hidden>
+    <div class="modal modal--results">
+      <header class="modal__header">
+        <h2 class="modal__title" id="resultsTitle">test complete</h2>
+        <button class="icon-btn" id="closeResultsBtn" aria-label="Close results">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="results-hero">
+        <div class="results-hero__stat">
+          <span class="results-hero__label">wpm</span>
+          <span class="results-hero__value" id="resultWpm">0</span>
+        </div>
+        <div class="results-hero__stat">
+          <span class="results-hero__label">acc</span>
+          <span class="results-hero__value" id="resultAcc">0%</span>
+        </div>
+      </div>
+
+      <div class="results-grid" id="resultsGrid">
+        <div class="result-item">
+          <span class="result-item__label">raw</span>
+          <span class="result-item__value skeleton" id="resultRaw">— — —</span>
+        </div>
+        <div class="result-item">
+          <span class="result-item__label">consistency</span>
+          <span class="result-item__value skeleton" id="resultConsistency">— — —</span>
+        </div>
+        <div class="result-item">
+          <span class="result-item__label">characters</span>
+          <span class="result-item__value skeleton" id="resultChars">— / — / — / —</span>
+        </div>
+        <div class="result-item">
+          <span class="result-item__label">time</span>
+          <span class="result-item__value skeleton" id="resultTime">— — —</span>
+        </div>
+      </div>
+
+      <div class="results-chart">
+        <svg id="wpmChart" viewBox="0 0 600 200" preserveAspectRatio="none" role="img" aria-label="WPM over time chart"></svg>
+      </div>
+
+      <footer class="modal__footer results-actions">
+        <button class="btn btn--primary" id="restartBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>restart</span>
+        </button>
+        <button class="btn" id="nextTestBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l10 8-10 8zM19 4v16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>next test</span>
+        </button>
+        <button class="btn" id="screenshotBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v12H3zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>
+          <span>save image</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: COMMAND PALETTE
+       ============================================================ -->
+  <div class="modal-overlay modal-overlay--top" id="commandOverlay" role="dialog" aria-modal="true" aria-labelledby="commandLabel" hidden>
+    <div class="command-palette">
+      <label for="commandInput" class="sr-only" id="commandLabel">Search commands</label>
+      <div class="command-palette__input-wrap">
+        <svg class="command-palette__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.75" />
+          <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
         </svg>
-        <span>monkeytype</span>
+        <input
+          type="text"
+          class="command-palette__input"
+          id="commandInput"
+          placeholder="type a command…"
+          autocomplete="off"
+          spellcheck="false"
+        />
       </div>
-      <div class="nav-actions">
-        <button class="icon-btn" id="commandBtn" title="Command palette (Esc / Ctrl+Shift+P)">
-          <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 12H4V7h16v10zM6 9h2v2H6V9zm0 4h2v2H6v-2zm4-4h8v2h-8V9zm0 4h8v2h-8v-2z"/></svg>
-        </button>
-        <button class="icon-btn" id="settingsBtn" title="Settings">
-          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        </button>
+      <div class="command-palette__list" id="commandList" role="listbox" aria-label="Commands">
+        <!-- Populated by JS -->
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: CUSTOM TEXT
+       ============================================================ -->
+  <div class="modal-overlay" id="customTextOverlay" role="dialog" aria-modal="true" aria-labelledby="customTextTitle" hidden>
+    <div class="modal modal--custom-text">
+      <header class="modal__header">
+        <h2 class="modal__title" id="customTextTitle">custom text</h2>
+        <button class="icon-btn" id="closeCustomTextBtn" aria-label="Close custom text">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="custom-text-body">
+        <label for="customTextArea" class="sr-only">Custom text</label>
+        <textarea
+          id="customTextArea"
+          class="custom-text-area"
+          placeholder="Paste or type your custom text here…&#10;&#10;Use the pipe character | to separate groups of words that should be shuffled together."
+          spellcheck="false"
+        ></textarea>
+
+        <div class="custom-text-options">
+          <div class="setting-row">
+            <span class="setting-label">Mode</span>
+            <div class="setting-control" data-setting="customTextMode">
+              <button class="config-btn active" data-value="simple">simple</button>
+              <button class="config-btn" data-value="repeat">repeat</button>
+              <button class="config-btn" data-value="shuffle">shuffle</button>
+              <button class="config-btn" data-value="random">random</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Word delimiter</span>
+            <div class="setting-control" data-setting="customTextDelimiter">
+              <button class="config-btn active" data-value="pipe">pipe</button>
+              <button class="config-btn" data-value="space">space</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Remove zero-width characters</span>
+            <button class="btn btn--sm" id="stripZeroWidthBtn">apply</button>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Standardize typography</span>
+            <button class="btn btn--sm" id="normalizeTypographyBtn">apply</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal__footer">
+        <button class="btn" id="cancelCustomTextBtn">cancel</button>
+        <button class="btn btn--primary" id="applyCustomTextBtn">apply</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       DRAWER: SETTINGS
+       ============================================================ -->
+  <div class="drawer-overlay" id="settingsOverlay" hidden></div>
+  <aside class="drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+    <header class="drawer__header">
+      <h2 class="drawer__title" id="settingsTitle">settings</h2>
+      <button class="icon-btn" id="closeSettingsBtn" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+        </svg>
+      </button>
     </header>
 
-    <!-- Test config -->
-    <div class="test-config" id="testConfig">
-      <div class="config-group" id="modeGroup">
-        <button class="config-btn active" data-mode="time">⏱ time</button>
-        <button class="config-btn" data-mode="words">A words</button>
-        <button class="config-btn" data-mode="quote">❝ quote</button>
-        <button class="config-btn" data-mode="zen">🧘 zen</button>
-        <button class="config-btn" data-mode="custom">✎ custom</button>
-      </div>
-      <div class="config-divider"></div>
-      <div class="config-group" id="subModeGroup">
-        <!-- dynamically populated -->
-      </div>
-      <div class="config-divider"></div>
-      <div class="config-group">
-        <button class="config-btn" id="punctuationBtn" data-toggle="punctuation">@ punctuation</button>
-        <button class="config-btn" id="numbersBtn" data-toggle="numbers"># numbers</button>
-      </div>
-    </div>
+    <div class="drawer__body">
 
-    <!-- Typing area -->
-    <div class="typing-container">
-      <div class="live-stats">
-        <div>⏱ <span id="liveTime">0</span>s</div>
-        <div>⚡ <span id="liveWpm">0</span> wpm</div>
-        <div>🎯 <span id="liveAcc">100</span>%</div>
-      </div>
-      <div id="words-container"></div>
-      <div class="caret" id="caret"></div>
-      <div class="focus-overlay" id="focusOverlay">
-        Click here or press any key to focus
-      </div>
-      <input type="text" id="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-    </div>
+      <!-- Behavior -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">behavior</h3>
 
-    <!-- Results modal -->
-    <div class="results-overlay" id="resultsOverlay">
-      <div class="results-modal">
-        <h2>Test Complete</h2>
-        <div class="results-grid" id="resultsGrid"></div>
-        <div class="chart-container" id="chartContainer">
-          <svg id="wpmChart" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="results-actions">
-          <button class="btn primary" id="restartBtn">↻ Restart</button>
-          <button class="btn" id="nextTestBtn">⏭ Next Test</button>
-          <button class="btn" id="closeResultsBtn">✕ Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Command palette -->
-    <div class="command-overlay" id="commandOverlay">
-      <div class="command-modal">
-        <input type="text" class="command-input" id="commandInput" placeholder="Type a command..." autocomplete="off" />
-        <div class="command-list" id="commandList"></div>
-      </div>
-    </div>
-
-    <!-- Settings drawer -->
-    <div class="settings-overlay" id="settingsOverlay"></div>
-    <div class="settings-drawer" id="settingsDrawer">
-      <div class="settings-header">
-        <h2>Settings</h2>
-        <button class="icon-btn" id="closeSettingsBtn">✕</button>
-      </div>
-
-      <div class="settings-section">
-        <h3>Behavior</h3>
         <div class="setting-row">
-          <span class="setting-label">Stop on error</span>
+          <span class="setting-label">stop on error</span>
           <div class="setting-control" data-setting="stopOnError">
             <button class="config-btn" data-value="off">off</button>
             <button class="config-btn" data-value="letter">letter</button>
             <button class="config-btn" data-value="word">word</button>
           </div>
         </div>
+
         <div class="setting-row">
-          <span class="setting-label">Difficulty</span>
+          <span class="setting-label">difficulty</span>
           <div class="setting-control" data-setting="difficulty">
             <button class="config-btn" data-value="normal">normal</button>
             <button class="config-btn" data-value="expert">expert</button>
             <button class="config-btn" data-value="master">master</button>
           </div>
         </div>
+
         <div class="setting-row">
-          <span class="setting-label">Blind mode</span>
+          <span class="setting-label">blind mode</span>
           <div class="setting-control" data-setting="blindMode">
             <button class="config-btn" data-value="off">off</button>
             <button class="config-btn" data-value="on">on</button>
           </div>
         </div>
+
         <div class="setting-row">
-          <span class="setting-label">Freedom mode</span>
+          <span class="setting-label">freedom mode</span>
           <div class="setting-control" data-setting="freedomMode">
             <button class="config-btn" data-value="off">off</button>
             <button class="config-btn" data-value="on">on</button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="settings-section">
-        <h3>Input</h3>
+      <!-- Input -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">input</h3>
+
         <div class="setting-row">
-          <span class="setting-label">Quick restart</span>
+          <span class="setting-label">quick restart</span>
           <div class="setting-control" data-setting="quickRestart">
             <button class="config-btn" data-value="off">off</button>
             <button class="config-btn" data-value="tab">tab</button>
             <button class="config-btn" data-value="enter">enter</button>
           </div>
         </div>
+
         <div class="setting-row">
-          <span class="setting-label">Caret style</span>
+          <span class="setting-label">caret style</span>
           <div class="setting-control" data-setting="caretStyle">
             <button class="config-btn" data-value="line">line</button>
             <button class="config-btn" data-value="smooth">smooth</button>
@@ -891,19 +728,30 @@
             <button class="config-btn" data-value="off">off</button>
           </div>
         </div>
-      </div>
 
-      <div class="settings-section">
-        <h3>Sound</h3>
         <div class="setting-row">
-          <span class="setting-label">Key sound</span>
+          <span class="setting-label">caret blink</span>
+          <div class="setting-control" data-setting="caretBlink">
+            <button class="config-btn" data-value="off">off</button>
+            <button class="config-btn" data-value="on">on</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sound -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">sound</h3>
+
+        <div class="setting-row">
+          <span class="setting-label">key sound</span>
           <div class="setting-control" data-setting="soundEnabled">
             <button class="config-btn" data-value="off">off</button>
             <button class="config-btn" data-value="on">on</button>
           </div>
         </div>
+
         <div class="setting-row">
-          <span class="setting-label">Sound profile</span>
+          <span class="setting-label">sound profile</span>
           <div class="setting-control" data-setting="soundProfile">
             <button class="config-btn" data-value="thock">thock</button>
             <button class="config-btn" data-value="click">click</button>
@@ -911,1378 +759,93 @@
             <button class="config-btn" data-value="beep">beep</button>
           </div>
         </div>
-      </div>
 
-      <div class="settings-section">
-        <h3>Theme</h3>
-        <div class="theme-grid" id="themeGrid"></div>
-      </div>
-
-      <div class="settings-section">
-        <h3>Danger Zone</h3>
         <div class="setting-row">
-          <span class="setting-label">Reset all settings</span>
-          <button class="btn" id="resetSettingsBtn" style="background: var(--error-color); color: #fff;">Reset</button>
+          <span class="setting-label">volume</span>
+          <input type="range" class="slider" id="soundVolume" min="0" max="100" value="50" aria-label="Sound volume" />
         </div>
-      </div>
+      </section>
+
+      <!-- Appearance -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">appearance</h3>
+
+        <div class="setting-row">
+          <span class="setting-label">scanlines</span>
+          <div class="setting-control" data-setting="scanlines">
+            <button class="config-btn" data-value="off">off</button>
+            <button class="config-btn" data-value="on">on</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">reduce motion</span>
+          <div class="setting-control" data-setting="reduceMotion">
+            <button class="config-btn" data-value="off">off</button>
+            <button class="config-btn" data-value="on">on</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">font size</span>
+          <div class="setting-control" data-setting="fontSize">
+            <button class="config-btn" data-value="sm">sm</button>
+            <button class="config-btn" data-value="md">md</button>
+            <button class="config-btn" data-value="lg">lg</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Theme -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">theme</h3>
+        <div class="theme-grid" id="themeGrid" role="radiogroup" aria-label="Theme selection">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="setting-row" style="margin-top: 1rem;">
+          <span class="setting-label">custom accent</span>
+          <input type="color" id="customAccent" class="color-input" value="#e2b714" aria-label="Custom accent color" />
+        </div>
+      </section>
+
+      <!-- Funbox -->
+      <section class="settings-section">
+        <h3 class="settings-section__title">funbox</h3>
+        <div class="setting-control setting-control--grid" data-setting="funbox">
+          <button class="config-btn active" data-value="none">none</button>
+          <button class="config-btn" data-value="mirror">mirror</button>
+          <button class="config-btn" data-value="upsideDown">upside down</button>
+          <button class="config-btn" data-value="memory">memory</button>
+          <button class="config-btn" data-value="readAhead">read ahead</button>
+          <button class="config-btn" data-value="morse">morse</button>
+        </div>
+      </section>
+
+      <!-- Danger zone -->
+      <section class="settings-section settings-section--danger">
+        <h3 class="settings-section__title">danger zone</h3>
+        <div class="setting-row">
+          <span class="setting-label">reset all settings</span>
+          <button class="btn btn--danger" id="resetSettingsBtn">reset</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">clear all data</span>
+          <button class="btn btn--danger" id="clearDataBtn">clear</button>
+        </div>
+      </section>
+
     </div>
-  </div>
-
-  <script>
-    /* ============================================================
-       GLOBAL STATE
-       ============================================================ */
-    const state = {
-      // Test config
-      mode: 'time',
-      timeLimit: 30,
-      wordLimit: 25,
-      quoteLength: 'medium',
-      punctuation: false,
-      numbers: false,
-      difficulty: 'normal',
-      // Settings
-      stopOnError: 'off',
-      blindMode: false,
-      freedomMode: false,
-      quickRestart: 'tab',
-      caretStyle: 'line',
-      soundEnabled: false,
-      soundProfile: 'thock',
-      theme: 'serika-dark',
-      // Runtime
-      words: [],
-      currentWordIndex: 0,
-      currentLetterIndex: 0,
-      typedWords: [],
-      startTime: null,
-      endTime: null,
-      timerInterval: null,
-      isActive: false,
-      isFinished: false,
-      // Stats
-      totalKeystrokes: 0,
-      correctKeystrokes: 0,
-      incorrectKeystrokes: 0,
-      extraKeystrokes: 0,
-      missedKeystrokes: 0,
-      wpmHistory: [],
-      rawWpmHistory: [],
-      errorHistory: [],
-      lastSecondMark: 0,
-      // Replay
-      replayLog: [],
-      // Chart data
-      chartData: [],
-    };
-
-    // Word lists
-    const WORD_LIST = [
-      'the','be','of','and','a','to','in','he','have','it','that','for','they','i','with','as','not','on','she','at','by','this','we','you','do','but','from','or','which','one','would','all','will','there','say','who','make','when','can','more','if','no','man','out','other','so','what','time','up','go','about','than','into','could','state','only','new','year','some','take','come','these','know','see','use','get','like','then','first','any','work','now','may','such','give','over','think','most','even','find','day','also','after','way','many','must','look','before','great','back','through','long','where','much','should','well','people','down','own','just','because','good','each','those','feel','seem','how','high','too','place','little','world','very','still','nation','hand','old','life','tell','write','become','here','show','house','both','between','need','mean','call','develop','under','last','right','move','thing','general','school','never','same','another','begin','while','number','part','turn','real','leave','might','want','point','form','off','child','few','small','since','against','ask','late','home','interest','large','person','end','open','public','follow','during','present','without','again','hold','govern','around','possible','head','consider','word','program','problem','however','lead','system','set','order','eye','plan','run','keep','face','fact','group','play','stand','increase','early','course','change','help','line'
-    ];
-
-    const PUNCTUATION = ['.', ',', '?', '!', "'", '"', '-', ';', ':'];
-    const NUMBERS = ['0','1','2','3','4','5','6','7','8','9'];
-
-    const QUOTES = {
-      short: [
-        { text: "The quick brown fox jumps over the lazy dog.", source: "Unknown" },
-        { text: "To be or not to be, that is the question.", source: "Shakespeare" },
-        { text: "All that glitters is not gold.", source: "Shakespeare" },
-        { text: "Knowledge is power.", source: "Francis Bacon" },
-      ],
-      medium: [
-        { text: "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.", source: "Jane Austen" },
-        { text: "The only thing we have to fear is fear itself.", source: "Franklin D. Roosevelt" },
-        { text: "In the middle of difficulty lies opportunity.", source: "Albert Einstein" },
-        { text: "The journey of a thousand miles begins with a single step.", source: "Lao Tzu" },
-      ],
-      long: [
-        { text: "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.", source: "Charles Dickens" },
-        { text: "So we beat on, boats against the current, borne back ceaselessly into the past.", source: "F. Scott Fitzgerald" },
-        { text: "I am no bird; and no net ensnares me: I am a free human being with an independent will.", source: "Charlotte Brontë" },
-      ],
-      thicc: [
-        { text: "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation.", source: "Herman Melville" },
-        { text: "Happy families are all alike; every unhappy family is unhappy in its own way. Everything was in confusion in the Oblonskys' house. The wife had discovered that the husband was carrying on an intrigue with a French girl, who had been a governess in their family, and she had announced to her husband that she could not go on living in the same house with him.", source: "Leo Tolstoy" },
-      ]
-    };
-
-    /* ============================================================
-       DOM REFERENCES
-       ============================================================ */
-    const wordsContainer = document.getElementById('words-container');
-    const caret = document.getElementById('caret');
-    const focusOverlay = document.getElementById('focusOverlay');
-    const liveTime = document.getElementById('liveTime');
-    const liveWpm = document.getElementById('liveWpm');
-    const liveAcc = document.getElementById('liveAcc');
-    const resultsOverlay = document.getElementById('resultsOverlay');
-    const resultsGrid = document.getElementById('resultsGrid');
-    const wpmChart = document.getElementById('wpmChart');
-    const commandOverlay = document.getElementById('commandOverlay');
-    const commandInput = document.getElementById('commandInput');
-    const commandList = document.getElementById('commandList');
-    const settingsOverlay = document.getElementById('settingsOverlay');
-    const settingsDrawer = document.getElementById('settingsDrawer');
-    const themeGrid = document.getElementById('themeGrid');
-    const mobileInput = document.getElementById('mobile-input');
-    const modeGroup = document.getElementById('modeGroup');
-    const subModeGroup = document.getElementById('subModeGroup');
-
-    /* ============================================================
-       THEME ENGINE
-       ============================================================ */
-    const THEMES = [
-      { id: 'serika-dark', name: 'Serika Dark', colors: { bg: '#323437', main: '#e2b714', sub: '#646669', text: '#d1d0c5' } },
-      { id: 'dracula', name: 'Dracula', colors: { bg: '#282a36', main: '#bd93f9', sub: '#6272a4', text: '#f8f8f2' } },
-      { id: 'nord', name: 'Nord', colors: { bg: '#2e3440', main: '#88c0d0', sub: '#4c566a', text: '#eceff4' } },
-      { id: 'cyberpunk', name: 'Cyberpunk', colors: { bg: '#0a0e17', main: '#f7e05e', sub: '#3a4a6b', text: '#c1c9e0' } },
-      { id: 'matrix', name: 'Matrix', colors: { bg: '#000000', main: '#00ff41', sub: '#003b00', text: '#00ff41' } },
-      { id: 'bento', name: 'Bento', colors: { bg: '#2c2e31', main: '#ffb86c', sub: '#6272a4', text: '#f8f8f2' } },
-      { id: 'chalk-light', name: 'Chalk Light', colors: { bg: '#f5f5f5', main: '#2c2e31', sub: '#b0b0b0', text: '#1a1a1a' } },
-    ];
-
-    function applyTheme(themeId) {
-      state.theme = themeId;
-      document.documentElement.setAttribute('data-theme', themeId);
-      localStorage.setItem('mt_theme', themeId);
-      // Update active swatch
-      document.querySelectorAll('.theme-swatch').forEach(el => {
-        el.classList.toggle('active', el.dataset.theme === themeId);
-      });
-    }
-
-    function buildThemeGrid() {
-      themeGrid.innerHTML = '';
-      THEMES.forEach(theme => {
-        const swatch = document.createElement('div');
-        swatch.className = 'theme-swatch';
-        swatch.dataset.theme = theme.id;
-        swatch.style.background = theme.colors.bg;
-        swatch.style.color = theme.colors.text;
-        swatch.style.border = `2px solid ${theme.colors.main}`;
-        swatch.textContent = theme.name;
-        swatch.addEventListener('click', () => applyTheme(theme.id));
-        themeGrid.appendChild(swatch);
-      });
-      // Set active
-      document.querySelectorAll('.theme-swatch').forEach(el => {
-        el.classList.toggle('active', el.dataset.theme === state.theme);
-      });
-    }
-
-    /* ============================================================
-       SOUND ENGINE (Web Audio API)
-       ============================================================ */
-    let audioCtx = null;
-
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
-    function playSound() {
-      if (!state.soundEnabled) return;
-      try {
-        initAudio();
-        const now = audioCtx.currentTime;
-        const profile = state.soundProfile;
-
-        if (profile === 'thock') {
-          // Low thock: short sine burst + noise
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(180, now);
-          osc.frequency.exponentialRampToValueAtTime(60, now + 0.05);
-          gain.gain.setValueAtTime(0.3, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.08);
-        } else if (profile === 'click') {
-          // Click: high frequency short burst
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(1200, now);
-          osc.frequency.exponentialRampToValueAtTime(400, now + 0.03);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.04);
-        } else if (profile === 'typewriter') {
-          // Typewriter: noise burst + metallic ping
-          const bufferSize = audioCtx.sampleRate * 0.05;
-          const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-          }
-          const noise = audioCtx.createBufferSource();
-          noise.buffer = buffer;
-          const noiseGain = audioCtx.createGain();
-          noiseGain.gain.setValueAtTime(0.2, now);
-          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-          noise.connect(noiseGain);
-          noiseGain.connect(audioCtx.destination);
-          noise.start(now);
-
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(800, now);
-          osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
-          gain.gain.setValueAtTime(0.1, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.08);
-        } else if (profile === 'beep') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, now);
-          gain.gain.setValueAtTime(0.1, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.06);
-        }
-      } catch (e) {
-        // Silently fail if audio context is unavailable
-      }
-    }
-
-    /* ============================================================
-       WORD GENERATION
-       ============================================================ */
-    function generateWords() {
-      let words = [];
-
-      if (state.mode === 'quote') {
-        const quoteSet = QUOTES[state.quoteLength] || QUOTES.medium;
-        const quote = quoteSet[Math.floor(Math.random() * quoteSet.length)];
-        words = quote.text.split(' ');
-      } else if (state.mode === 'zen') {
-        words = [];
-      } else if (state.mode === 'custom') {
-        // For custom, we just use a default list if no custom text
-        words = WORD_LIST.slice(0, 50).sort(() => Math.random() - 0.5);
-      } else {
-        // Time or Words mode
-        const count = state.mode === 'time' ? 200 : state.wordLimit;
-        for (let i = 0; i < count; i++) {
-          let word = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
-          // Apply punctuation/numbers
-          if (state.punctuation && Math.random() < 0.3) {
-            word += PUNCTUATION[Math.floor(Math.random() * PUNCTUATION.length)];
-          }
-          if (state.numbers && Math.random() < 0.15) {
-            word = NUMBERS[Math.floor(Math.random() * NUMBERS.length)] + word;
-          }
-          // Capitalize sometimes
-          if (state.punctuation && Math.random() < 0.2) {
-            word = word.charAt(0).toUpperCase() + word.slice(1);
-          }
-          words.push(word);
-        }
-      }
-      return words;
-    }
-
-    /* ============================================================
-       RENDERING
-       ============================================================ */
-    function renderWords() {
-      wordsContainer.innerHTML = '';
-      if (state.mode === 'zen') {
-        wordsContainer.innerHTML = '<span style="color: var(--sub-color); font-size: 0.9rem;">Zen mode — type freely. Press Shift+Enter to finish.</span>';
-        return;
-      }
-      state.words.forEach((word, wi) => {
-        const wordEl = document.createElement('div');
-        wordEl.className = 'word';
-        if (wi === state.currentWordIndex) wordEl.classList.add('active');
-        wordEl.dataset.wordIndex = wi;
-
-        for (let li = 0; li < word.length; li++) {
-          const letterEl = document.createElement('span');
-          letterEl.className = 'letter';
-          letterEl.textContent = word[li];
-          letterEl.dataset.letterIndex = li;
-          wordEl.appendChild(letterEl);
-        }
-        wordsContainer.appendChild(wordEl);
-      });
-
-      // Apply typed state
-      applyTypedState();
-      updateCaret();
-    }
-
-    function applyTypedState() {
-      const wordEls = wordsContainer.querySelectorAll('.word');
-      wordEls.forEach((wordEl, wi) => {
-        const word = state.words[wi];
-        const typedWord = state.typedWords[wi] || '';
-        const letters = wordEl.querySelectorAll('.letter');
-
-        letters.forEach((letterEl, li) => {
-          letterEl.classList.remove('correct', 'incorrect', 'extra', 'missed');
-          if (li < typedWord.length) {
-            if (typedWord[li] === word[li]) {
-              if (!state.blindMode) letterEl.classList.add('correct');
-            } else {
-              if (!state.blindMode) letterEl.classList.add('incorrect');
-            }
-          } else if (li >= word.length && li < typedWord.length) {
-            // Extra characters (shouldn't happen with current logic, but handle)
-          }
-        });
-
-        // Mark extra letters typed beyond word length
-        if (typedWord.length > word.length) {
-          for (let li = word.length; li < typedWord.length; li++) {
-            const extraSpan = document.createElement('span');
-            extraSpan.className = 'letter extra';
-            extraSpan.textContent = typedWord[li];
-            wordEl.appendChild(extraSpan);
-          }
-        }
-
-        // Highlight active word
-        wordEl.classList.toggle('active', wi === state.currentWordIndex);
-      });
-    }
-
-    function updateCaret() {
-      const activeWord = wordsContainer.querySelector('.word.active');
-      if (!activeWord || state.mode === 'zen') {
-        caret.style.opacity = '0';
-        return;
-      }
-      caret.style.opacity = '1';
-
-      const letters = activeWord.querySelectorAll('.letter');
-      const li = state.currentLetterIndex;
-      const wordRect = activeWord.getBoundingClientRect();
-      const containerRect = wordsContainer.getBoundingClientRect();
-
-      let caretLeft = wordRect.left - containerRect.left;
-      let caretTop = wordRect.top - containerRect.top;
-
-      if (li < letters.length) {
-        const letterRect = letters[li].getBoundingClientRect();
-        caretLeft = letterRect.left - containerRect.left;
-        caretTop = letterRect.top - containerRect.top;
-      } else if (letters.length > 0) {
-        const lastLetter = letters[letters.length - 1].getBoundingClientRect();
-        caretLeft = lastLetter.right - containerRect.left;
-        caretTop = lastLetter.top - containerRect.top;
-      }
-
-      caret.style.left = caretLeft + 'px';
-      caret.style.top = caretTop + 'px';
-      caret.style.height = (letters[0] ? letters[0].getBoundingClientRect().height : 24) + 'px';
-    }
-
-    /* ============================================================
-       STATS CALCULATIONS
-       ============================================================ */
-    function calculateWPM() {
-      if (!state.startTime) return 0;
-      const elapsed = (performance.now() - state.startTime) / 1000 / 60; // minutes
-      if (elapsed <= 0) return 0;
-      const correctChars = state.correctKeystrokes;
-      return Math.round((correctChars / 5) / elapsed);
-    }
-
-    function calculateRawWPM() {
-      if (!state.startTime) return 0;
-      const elapsed = (performance.now() - state.startTime) / 1000 / 60;
-      if (elapsed <= 0) return 0;
-      const totalChars = state.correctKeystrokes + state.incorrectKeystrokes + state.extraKeystrokes;
-      return Math.round((totalChars / 5) / elapsed);
-    }
-
-    function calculateAccuracy() {
-      const total = state.correctKeystrokes + state.incorrectKeystrokes;
-      if (total === 0) return 100;
-      return Math.round((state.correctKeystrokes / total) * 100 * 10) / 10;
-    }
-
-    function calculateConsistency() {
-      if (state.wpmHistory.length < 2) return 100;
-      const wpms = state.wpmHistory.map(d => d.wpm);
-      const avg = wpms.reduce((a, b) => a + b, 0) / wpms.length;
-      const variance = wpms.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / wpms.length;
-      const stdDev = Math.sqrt(variance);
-      const cv = avg > 0 ? stdDev / avg : 0;
-      return Math.round(Math.max(0, 100 - cv * 100));
-    }
-
-    /* ============================================================
-       TIMER
-       ============================================================ */
-    function startTimer() {
-      if (state.timerInterval) clearInterval(state.timerInterval);
-      state.lastSecondMark = performance.now();
-
-      state.timerInterval = setInterval(() => {
-        if (!state.isActive || state.isFinished) return;
-
-        const elapsed = (performance.now() - state.startTime) / 1000;
-        liveTime.textContent = Math.floor(elapsed);
-
-        // Update live WPM
-        const wpm = calculateWPM();
-        liveWpm.textContent = wpm;
-        const acc = calculateAccuracy();
-        liveAcc.textContent = acc;
-
-        // Track per-second data
-        const now = performance.now();
-        if (now - state.lastSecondMark >= 1000) {
-          state.lastSecondMark = now;
-          const currentWpm = calculateWPM();
-          const currentRawWpm = calculateRawWPM();
-          const currentAcc = calculateAccuracy();
-          state.wpmHistory.push({ time: Math.floor(elapsed), wpm: currentWpm });
-          state.rawWpmHistory.push({ time: Math.floor(elapsed), wpm: currentRawWpm });
-          state.chartData.push({
-            time: Math.floor(elapsed),
-            wpm: currentWpm,
-            raw: currentRawWpm,
-            acc: currentAcc,
-            errors: state.incorrectKeystrokes
-          });
-        }
-
-        // Check time limit
-        if (state.mode === 'time' && elapsed >= state.timeLimit) {
-          finishTest();
-        }
-      }, 100);
-    }
-
-    /* ============================================================
-       TEST LIFECYCLE
-       ============================================================ */
-    function startTest() {
-      if (state.isFinished) {
-        resetTest();
-      }
-      if (state.isActive) return;
-
-      state.isActive = true;
-      state.startTime = performance.now();
-      focusOverlay.classList.add('hidden');
-      startTimer();
-    }
-
-    function finishTest() {
-      if (state.isFinished) return;
-      state.isFinished = true;
-      state.isActive = false;
-      state.endTime = performance.now();
-
-      if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-      }
-
-      // Final stats calculation
-      const elapsedMin = (state.endTime - state.startTime) / 1000 / 60;
-      const wpm = Math.round((state.correctKeystrokes / 5) / elapsedMin);
-      const rawWpm = Math.round(((state.correctKeystrokes + state.incorrectKeystrokes + state.extraKeystrokes) / 5) / elapsedMin);
-      const acc = calculateAccuracy();
-      const consistency = calculateConsistency();
-
-      // Character breakdown
-      const correctChars = state.correctKeystrokes;
-      const incorrectChars = state.incorrectKeystrokes;
-      const extraChars = state.extraKeystrokes;
-      const missedChars = state.missedKeystrokes;
-
-      // Save to history
-      saveResult({
-        wpm, rawWpm, acc, consistency,
-        correctChars, incorrectChars, extraChars, missedChars,
-        mode: state.mode,
-        timeLimit: state.timeLimit,
-        wordLimit: state.wordLimit,
-        difficulty: state.difficulty,
-        timestamp: Date.now()
-      });
-
-      // Show results
-      showResults({
-        wpm, rawWpm, acc, consistency,
-        correctChars, incorrectChars, extraChars, missedChars,
-        elapsed: (state.endTime - state.startTime) / 1000
-      });
-    }
-
-    function resetTest() {
-      // Clear timer
-      if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-      }
-
-      // Reset state
-      state.isActive = false;
-      state.isFinished = false;
-      state.startTime = null;
-      state.endTime = null;
-      state.currentWordIndex = 0;
-      state.currentLetterIndex = 0;
-      state.typedWords = [];
-      state.totalKeystrokes = 0;
-      state.correctKeystrokes = 0;
-      state.incorrectKeystrokes = 0;
-      state.extraKeystrokes = 0;
-      state.missedKeystrokes = 0;
-      state.wpmHistory = [];
-      state.rawWpmHistory = [];
-      state.errorHistory = [];
-      state.chartData = [];
-      state.replayLog = [];
-
-      // Regenerate words
-      state.words = generateWords();
-      renderWords();
-
-      // Reset UI
-      liveTime.textContent = '0';
-      liveWpm.textContent = '0';
-      liveAcc.textContent = '100';
-      resultsOverlay.classList.remove('show');
-      focusOverlay.classList.remove('hidden');
-      updateCaret();
-
-      // Focus mobile input for mobile keyboards
-      mobileInput.focus();
-    }
-
-    /* ============================================================
-       INPUT HANDLING
-       ============================================================ */
-    function handleKeyDown(e) {
-      // Ignore if command palette or settings is open
-      if (commandOverlay.classList.contains('show') || settingsDrawer.classList.contains('open')) return;
-
-      // Quick restart
-      if (state.quickRestart !== 'off') {
-        if (state.quickRestart === 'tab' && e.key === 'Tab') {
-          e.preventDefault();
-          resetTest();
-          return;
-        }
-        if (state.quickRestart === 'enter' && e.key === 'Enter') {
-          e.preventDefault();
-          resetTest();
-          return;
-        }
-      }
-
-      // Zen mode finish
-      if (state.mode === 'zen' && e.shiftKey && e.key === 'Enter') {
-        e.preventDefault();
-        finishTest();
-        return;
-      }
-
-      // Start test on first keypress
-      if (!state.isActive && !state.isFinished) {
-        startTest();
-      }
-
-      if (state.isFinished) return;
-
-      // Handle backspace
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        handleBackspace(e.ctrlKey || e.metaKey);
-        return;
-      }
-
-      // Handle space (word submission)
-      if (e.key === ' ') {
-        e.preventDefault();
-        handleSpace();
-        return;
-      }
-
-      // Handle printable characters
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        e.preventDefault();
-        handleCharacter(e.key);
-      }
-    }
-
-    function handleCharacter(char) {
-      if (state.isFinished) return;
-
-      const currentWord = state.words[state.currentWordIndex];
-      if (!currentWord && state.mode !== 'zen') return;
-
-      // Initialize typed word if needed
-      if (!state.typedWords[state.currentWordIndex]) {
-        state.typedWords[state.currentWordIndex] = '';
-      }
-
-      const typedWord = state.typedWords[state.currentWordIndex];
-      const expectedChar = currentWord ? currentWord[state.currentLetterIndex] : char;
-
-      // Record keystroke
-      state.totalKeystrokes++;
-      state.replayLog.push({
-        timestamp: performance.now(),
-        char: char,
-        expected: expectedChar,
-        correct: char === expectedChar,
-        wordIndex: state.currentWordIndex,
-        letterIndex: state.currentLetterIndex
-      });
-
-      // Play sound
-      playSound();
-
-      // Master difficulty: fail on first incorrect keypress
-      if (state.difficulty === 'master' && char !== expectedChar) {
-        finishTest();
-        return;
-      }
-
-      // Stop on error (letter mode)
-      if (state.stopOnError === 'letter' && char !== expectedChar) {
-        state.incorrectKeystrokes++;
-        // Mark as incorrect but don't advance
-        if (!state.blindMode) {
-          const wordEl = wordsContainer.querySelector(`.word[data-word-index="${state.currentWordIndex}"]`);
-          if (wordEl) {
-            const letterEl = wordEl.querySelector(`.letter[data-letter-index="${state.currentLetterIndex}"]`);
-            if (letterEl) letterEl.classList.add('incorrect');
-          }
-        }
-        updateCaret();
-        return;
-      }
-
-      // Add character to typed word
-      state.typedWords[state.currentWordIndex] += char;
-
-      // Check correctness
-      if (char === expectedChar) {
-        state.correctKeystrokes++;
-        if (!state.blindMode) {
-          const wordEl = wordsContainer.querySelector(`.word[data-word-index="${state.currentWordIndex}"]`);
-          if (wordEl) {
-            const letterEl = wordEl.querySelector(`.letter[data-letter-index="${state.currentLetterIndex}"]`);
-            if (letterEl) letterEl.classList.add('correct');
-          }
-        }
-        state.currentLetterIndex++;
-      } else {
-        state.incorrectKeystrokes++;
-        if (!state.blindMode) {
-          const wordEl = wordsContainer.querySelector(`.word[data-word-index="${state.currentWordIndex}"]`);
-          if (wordEl) {
-            const letterEl = wordEl.querySelector(`.letter[data-letter-index="${state.currentLetterIndex}"]`);
-            if (letterEl) letterEl.classList.add('incorrect');
-          }
-        }
-        // In normal mode, still advance (allow typos)
-        if (state.difficulty !== 'master') {
-          state.currentLetterIndex++;
-        }
-      }
-
-      // Check if word is complete
-      if (state.currentLetterIndex >= currentWord.length && state.mode !== 'zen') {
-        // Auto-advance on word completion for expert mode
-        if (state.difficulty === 'expert') {
-          // Check if word is correct
-          if (typedWord !== currentWord) {
-            finishTest();
-            return;
-          }
-        }
-      }
-
-      // Update live stats
-      const wpm = calculateWPM();
-      liveWpm.textContent = wpm;
-      liveAcc.textContent = calculateAccuracy();
-
-      updateCaret();
-
-      // Words mode: check if all words completed
-      if (state.mode === 'words' && state.currentWordIndex >= state.words.length - 1 && state.currentLetterIndex >= currentWord.length) {
-        finishTest();
-      }
-    }
-
-    function handleSpace() {
-      if (state.isFinished) return;
-
-      const currentWord = state.words[state.currentWordIndex];
-      if (!currentWord) return;
-
-      const typedWord = state.typedWords[state.currentWordIndex] || '';
-
-      // Expert mode: fail if word is incorrect
-      if (state.difficulty === 'expert' && typedWord !== currentWord) {
-        finishTest();
-        return;
-      }
-
-      // Stop on error (word mode): don't advance if word has errors
-      if (state.stopOnError === 'word' && typedWord !== currentWord) {
-        return;
-      }
-
-      // Count missed characters (if typed word is shorter)
-      if (typedWord.length < currentWord.length) {
-        state.missedKeystrokes += currentWord.length - typedWord.length;
-        // Mark missed letters
-        if (!state.blindMode) {
-          const wordEl = wordsContainer.querySelector(`.word[data-word-index="${state.currentWordIndex}"]`);
-          if (wordEl) {
-            const letters = wordEl.querySelectorAll('.letter');
-            for (let i = typedWord.length; i < currentWord.length; i++) {
-              if (letters[i]) letters[i].classList.add('missed');
-            }
-          }
-        }
-      }
-
-      // Move to next word
-      state.currentWordIndex++;
-      state.currentLetterIndex = 0;
-
-      // Check if all words completed
-      if (state.mode === 'words' && state.currentWordIndex >= state.words.length) {
-        finishTest();
-        return;
-      }
-
-      // Update active word
-      const wordEls = wordsContainer.querySelectorAll('.word');
-      wordEls.forEach(el => el.classList.remove('active'));
-      const nextWord = wordsContainer.querySelector(`.word[data-word-index="${state.currentWordIndex}"]`);
-      if (nextWord) nextWord.classList.add('active');
-
-      updateCaret();
-    }
-
-    function handleBackspace(isWordDelete) {
-      if (state.isFinished) return;
-
-      // Freedom mode: allow backspacing past correct words
-      if (!state.freedomMode && state.currentLetterIndex === 0 && state.currentWordIndex > 0) {
-        // Check if current word is complete and correct
-        const prevWord = state.words[state.currentWordIndex - 1];
-        const prevTyped = state.typedWords[state.currentWordIndex - 1] || '';
-        if (prevTyped === prevWord && !state.freedomMode) {
-          return; // Can't go back past correct words
-        }
-      }
-
-      if (isWordDelete) {
-        // Delete whole word
-        state.typedWords[state.currentWordIndex] = '';
-        state.currentLetterIndex = 0;
-      } else {
-        if (state.currentLetterIndex > 0) {
-          state.currentLetterIndex--;
-          const typed = state.typedWords[state.currentWordIndex] || '';
-          state.typedWords[state.currentWordIndex] = typed.slice(0, -1);
-        } else if (state.currentWordIndex > 0) {
-          // Move to previous word
-          state.currentWordIndex--;
-          const prevTyped = state.typedWords[state.currentWordIndex] || '';
-          state.currentLetterIndex = prevTyped.length;
-        }
-      }
-
-      // Re-render typed state
-      applyTypedState();
-      updateCaret();
-    }
-
-    /* ============================================================
-       RESULTS
-       ============================================================ */
-    function showResults(data) {
-      const { wpm, rawWpm, acc, consistency, correctChars, incorrectChars, extraChars, missedChars, elapsed } = data;
-
-      resultsGrid.innerHTML = `
-        <div class="result-item">
-          <div class="result-label">wpm</div>
-          <div class="result-value">${wpm}</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">raw</div>
-          <div class="result-value">${rawWpm}</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">accuracy</div>
-          <div class="result-value">${acc}%</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">consistency</div>
-          <div class="result-value">${consistency}%</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">characters</div>
-          <div class="result-value" style="font-size: 1.2rem;">${correctChars}/${incorrectChars}/${extraChars}/${missedChars}</div>
-          <div class="result-sub">correct / incorrect / extra / missed</div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">time</div>
-          <div class="result-value">${Math.round(elapsed)}s</div>
-        </div>
-      `;
-
-      // Draw chart
-      drawChart();
-
-      resultsOverlay.classList.add('show');
-    }
-
-    function drawChart() {
-      const data = state.chartData;
-      if (data.length < 2) {
-        wpmChart.innerHTML = '<text x="300" y="100" text-anchor="middle" fill="var(--sub-color)" font-size="14">Not enough data for chart</text>';
-        return;
-      }
-
-      const padding = { top: 20, right: 30, bottom: 30, left: 40 };
-      const width = 600;
-      const height = 200;
-      const chartW = width - padding.left - padding.right;
-      const chartH = height - padding.top - padding.bottom;
-
-      const maxWpm = Math.max(...data.map(d => Math.max(d.wpm, d.raw)), 10);
-      const maxTime = Math.max(...data.map(d => d.time), 1);
-
-      const xScale = (t) => padding.left + (t / maxTime) * chartW;
-      const yScale = (v) => padding.top + chartH - (v / maxWpm) * chartH;
-
-      let wpmPath = '';
-      let rawPath = '';
-
-      data.forEach((d, i) => {
-        const x = xScale(d.time);
-        const yWpm = yScale(d.wpm);
-        const yRaw = yScale(d.raw);
-        if (i === 0) {
-          wpmPath += `M ${x} ${yWpm}`;
-          rawPath += `M ${x} ${yRaw}`;
-        } else {
-          wpmPath += ` L ${x} ${yWpm}`;
-          rawPath += ` L ${x} ${yRaw}`;
-        }
-      });
-
-      // Error markers
-      let errorMarkers = '';
-      data.forEach(d => {
-        if (d.errors > 0) {
-          const x = xScale(d.time);
-          const y = yScale(d.wpm);
-          errorMarkers += `<circle cx="${x}" cy="${y}" r="3" fill="var(--error-color)" />`;
-        }
-      });
-
-      // Grid lines
-      let gridLines = '';
-      for (let i = 0; i <= 4; i++) {
-        const y = padding.top + (i / 4) * chartH;
-        const val = Math.round(maxWpm * (1 - i / 4));
-        gridLines += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--sub-color)" stroke-opacity="0.2" stroke-dasharray="4" />`;
-        gridLines += `<text x="${padding.left - 5}" y="${y + 4}" text-anchor="end" fill="var(--sub-color)" font-size="10">${val}</text>`;
-      }
-
-      // X axis labels
-      let xLabels = '';
-      const step = Math.max(1, Math.floor(maxTime / 5));
-      for (let t = 0; t <= maxTime; t += step) {
-        const x = xScale(t);
-        xLabels += `<text x="${x}" y="${height - 5}" text-anchor="middle" fill="var(--sub-color)" font-size="10">${t}</text>`;
-      }
-
-      wpmChart.innerHTML = `
-        ${gridLines}
-        ${xLabels}
-        <path d="${rawPath}" fill="none" stroke="var(--sub-color)" stroke-width="2" stroke-linejoin="round" />
-        <path d="${wpmPath}" fill="none" stroke="var(--main-color)" stroke-width="2.5" stroke-linejoin="round" />
-        ${errorMarkers}
-        <text x="${padding.left}" y="12" fill="var(--main-color)" font-size="10">WPM</text>
-        <text x="${padding.left + 50}" y="12" fill="var(--sub-color)" font-size="10">Raw</text>
-      `;
-    }
-
-    /* ============================================================
-       STORAGE
-       ============================================================ */
-    function saveResult(result) {
-      try {
-        const history = JSON.parse(localStorage.getItem('mt_history') || '[]');
-        history.push(result);
-        // Keep only last 100 results
-        if (history.length > 100) history.shift();
-        localStorage.setItem('mt_history', JSON.stringify(history));
-      } catch (e) {
-        console.warn('Failed to save result:', e);
-      }
-    }
-
-    function saveSettings() {
-      const settings = {
-        mode: state.mode,
-        timeLimit: state.timeLimit,
-        wordLimit: state.wordLimit,
-        quoteLength: state.quoteLength,
-        punctuation: state.punctuation,
-        numbers: state.numbers,
-        difficulty: state.difficulty,
-        stopOnError: state.stopOnError,
-        blindMode: state.blindMode,
-        freedomMode: state.freedomMode,
-        quickRestart: state.quickRestart,
-        caretStyle: state.caretStyle,
-        soundEnabled: state.soundEnabled,
-        soundProfile: state.soundProfile,
-        theme: state.theme,
-      };
-      localStorage.setItem('mt_settings', JSON.stringify(settings));
-    }
-
-    function loadSettings() {
-      try {
-        const saved = JSON.parse(localStorage.getItem('mt_settings') || '{}');
-        Object.assign(state, saved);
-      } catch (e) {
-        // Use defaults
-      }
-    }
-
-    /* ============================================================
-       UI UPDATES
-       ============================================================ */
-    function updateSubModeButtons() {
-      subModeGroup.innerHTML = '';
-
-      if (state.mode === 'time') {
-        [15, 30, 60, 120].forEach(t => {
-          const btn = document.createElement('button');
-          btn.className = `config-btn ${state.timeLimit === t ? 'active' : ''}`;
-          btn.textContent = t;
-          btn.addEventListener('click', () => {
-            state.timeLimit = t;
-            updateSubModeButtons();
-            resetTest();
-            saveSettings();
-          });
-          subModeGroup.appendChild(btn);
-        });
-        const customBtn = document.createElement('button');
-        customBtn.className = 'config-btn';
-        customBtn.textContent = 'custom';
-        customBtn.addEventListener('click', () => {
-          const val = prompt('Enter time in seconds:', state.timeLimit);
-          if (val && !isNaN(val) && parseInt(val) > 0) {
-            state.timeLimit = parseInt(val);
-            updateSubModeButtons();
-            resetTest();
-            saveSettings();
-          }
-        });
-        subModeGroup.appendChild(customBtn);
-      } else if (state.mode === 'words') {
-        [10, 25, 50, 100].forEach(w => {
-          const btn = document.createElement('button');
-          btn.className = `config-btn ${state.wordLimit === w ? 'active' : ''}`;
-          btn.textContent = w;
-          btn.addEventListener('click', () => {
-            state.wordLimit = w;
-            updateSubModeButtons();
-            resetTest();
-            saveSettings();
-          });
-          subModeGroup.appendChild(btn);
-        });
-      } else if (state.mode === 'quote') {
-        ['short', 'medium', 'long', 'thicc'].forEach(l => {
-          const btn = document.createElement('button');
-          btn.className = `config-btn ${state.quoteLength === l ? 'active' : ''}`;
-          btn.textContent = l;
-          btn.addEventListener('click', () => {
-            state.quoteLength = l;
-            updateSubModeButtons();
-            resetTest();
-            saveSettings();
-          });
-          subModeGroup.appendChild(btn);
-        });
-      } else if (state.mode === 'zen' || state.mode === 'custom') {
-        subModeGroup.innerHTML = '<span style="color: var(--sub-color); font-size: 0.8rem; padding: 0.3rem 0.7rem;">no options</span>';
-      }
-    }
-
-    function updateToggleButtons() {
-      document.getElementById('punctuationBtn').classList.toggle('active', state.punctuation);
-      document.getElementById('numbersBtn').classList.toggle('active', state.numbers);
-    }
-
-    function updateSettingButtons() {
-      document.querySelectorAll('.setting-control').forEach(control => {
-        const setting = control.dataset.setting;
-        const value = state[setting];
-        control.querySelectorAll('.config-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.value === String(value));
-        });
-      });
-    }
-
-    function updateCaretStyle() {
-      caret.className = 'caret';
-      if (state.caretStyle === 'smooth') caret.classList.add('smooth');
-      if (state.caretStyle === 'block') caret.classList.add('block');
-      if (state.caretStyle === 'underline') caret.classList.add('underline');
-      if (state.caretStyle === 'off') caret.classList.add('off');
-      updateCaret();
-    }
-
-    /* ============================================================
-       COMMAND PALETTE
-       ============================================================ */
-    const COMMANDS = [
-      // Modes
-      { id: 'mode-time', label: 'Mode: Time', category: 'Mode', action: () => { state.mode = 'time'; updateModeButtons(); updateSubModeButtons(); resetTest(); } },
-      { id: 'mode-words', label: 'Mode: Words', category: 'Mode', action: () => { state.mode = 'words'; updateModeButtons(); updateSubModeButtons(); resetTest(); } },
-      { id: 'mode-quote', label: 'Mode: Quote', category: 'Mode', action: () => { state.mode = 'quote'; updateModeButtons(); updateSubModeButtons(); resetTest(); } },
-      { id: 'mode-zen', label: 'Mode: Zen', category: 'Mode', action: () => { state.mode = 'zen'; updateModeButtons(); updateSubModeButtons(); resetTest(); } },
-      { id: 'mode-custom', label: 'Mode: Custom', category: 'Mode', action: () => { state.mode = 'custom'; updateModeButtons(); updateSubModeButtons(); resetTest(); } },
-      // Time
-      { id: 'time-15', label: 'Time: 15s', category: 'Time', action: () => { state.timeLimit = 15; updateSubModeButtons(); resetTest(); } },
-      { id: 'time-30', label: 'Time: 30s', category: 'Time', action: () => { state.timeLimit = 30; updateSubModeButtons(); resetTest(); } },
-      { id: 'time-60', label: 'Time: 60s', category: 'Time', action: () => { state.timeLimit = 60; updateSubModeButtons(); resetTest(); } },
-      { id: 'time-120', label: 'Time: 120s', category: 'Time', action: () => { state.timeLimit = 120; updateSubModeButtons(); resetTest(); } },
-      // Words
-      { id: 'words-10', label: 'Words: 10', category: 'Words', action: () => { state.wordLimit = 10; updateSubModeButtons(); resetTest(); } },
-      { id: 'words-25', label: 'Words: 25', category: 'Words', action: () => { state.wordLimit = 25; updateSubModeButtons(); resetTest(); } },
-      { id: 'words-50', label: 'Words: 50', category: 'Words', action: () => { state.wordLimit = 50; updateSubModeButtons(); resetTest(); } },
-      { id: 'words-100', label: 'Words: 100', category: 'Words', action: () => { state.wordLimit = 100; updateSubModeButtons(); resetTest(); } },
-      // Toggles
-      { id: 'toggle-punctuation', label: 'Toggle Punctuation', category: 'Toggle', action: () => { state.punctuation = !state.punctuation; updateToggleButtons(); resetTest(); } },
-      { id: 'toggle-numbers', label: 'Toggle Numbers', category: 'Toggle', action: () => { state.numbers = !state.numbers; updateToggleButtons(); resetTest(); } },
-      // Difficulty
-      { id: 'diff-normal', label: 'Difficulty: Normal', category: 'Difficulty', action: () => { state.difficulty = 'normal'; updateSettingButtons(); resetTest(); } },
-      { id: 'diff-expert', label: 'Difficulty: Expert', category: 'Difficulty', action: () => { state.difficulty = 'expert'; updateSettingButtons(); resetTest(); } },
-      { id: 'diff-master', label: 'Difficulty: Master', category: 'Difficulty', action: () => { state.difficulty = 'master'; updateSettingButtons(); resetTest(); } },
-      // Themes
-      ...THEMES.map(t => ({
-        id: `theme-${t.id}`,
-        label: `Theme: ${t.name}`,
-        category: 'Theme',
-        action: () => { applyTheme(t.id); saveSettings(); }
-      })),
-      // Settings
-      { id: 'toggle-blind', label: 'Toggle Blind Mode', category: 'Settings', action: () => { state.blindMode = !state.blindMode; updateSettingButtons(); resetTest(); } },
-      { id: 'toggle-sound', label: 'Toggle Sound', category: 'Settings', action: () => { state.soundEnabled = !state.soundEnabled; updateSettingButtons(); saveSettings(); } },
-      { id: 'toggle-freedom', label: 'Toggle Freedom Mode', category: 'Settings', action: () => { state.freedomMode = !state.freedomMode; updateSettingButtons(); resetTest(); } },
-      // Actions
-      { id: 'restart', label: 'Restart Test', category: 'Action', action: () => resetTest() },
-      { id: 'close', label: 'Close Command Palette', category: 'Action', action: () => closeCommandPalette() },
-    ];
-
-    function openCommandPalette() {
-      commandOverlay.classList.add('show');
-      commandInput.value = '';
-      renderCommandList('');
-      commandInput.focus();
-    }
-
-    function closeCommandPalette() {
-      commandOverlay.classList.remove('show');
-      commandInput.blur();
-    }
-
-    function renderCommandList(query) {
-      const filtered = COMMANDS.filter(cmd =>
-        cmd.label.toLowerCase().includes(query.toLowerCase()) ||
-        cmd.category.toLowerCase().includes(query.toLowerCase())
-      );
-
-      commandList.innerHTML = '';
-      filtered.forEach((cmd, i) => {
-        const item = document.createElement('div');
-        item.className = `command-item ${i === 0 ? 'selected' : ''}`;
-        item.innerHTML = `
-          <span>${cmd.label}</span>
-          <span class="category">${cmd.category}</span>
-        `;
-        item.addEventListener('click', () => {
-          cmd.action();
-          if (cmd.id !== 'close') closeCommandPalette();
-        });
-        commandList.appendChild(item);
-      });
-
-      if (filtered.length === 0) {
-        commandList.innerHTML = '<div class="command-item" style="justify-content: center; color: var(--sub-color);">No commands found</div>';
-      }
-    }
-
-    /* ============================================================
-       MODE BUTTONS
-       ============================================================ */
-    function updateModeButtons() {
-      document.querySelectorAll('#modeGroup .config-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === state.mode);
-      });
-    }
-
-    /* ============================================================
-       EVENT LISTENERS
-       ============================================================ */
-    // Mode buttons
-    modeGroup.addEventListener('click', (e) => {
-      const btn = e.target.closest('.config-btn');
-      if (!btn) return;
-      state.mode = btn.dataset.mode;
-      updateModeButtons();
-      updateSubModeButtons();
-      resetTest();
-      saveSettings();
-    });
-
-    // Toggle buttons
-    document.getElementById('punctuationBtn').addEventListener('click', () => {
-      state.punctuation = !state.punctuation;
-      updateToggleButtons();
-      resetTest();
-      saveSettings();
-    });
-
-    document.getElementById('numbersBtn').addEventListener('click', () => {
-      state.numbers = !state.numbers;
-      updateToggleButtons();
-      resetTest();
-      saveSettings();
-    });
-
-    // Keyboard input
-    document.addEventListener('keydown', handleKeyDown);
-
-    // Mobile input
-    mobileInput.addEventListener('input', (e) => {
-      const val = e.target.value;
-      if (val.length > 0) {
-        // Process each character
-        for (const char of val) {
-          if (!state.isActive && !state.isFinished) startTest();
-          if (char === ' ') {
-            handleSpace();
-          } else {
-            handleCharacter(char);
-          }
-        }
-        e.target.value = '';
-      }
-    });
-
-    // Focus handling
-    focusOverlay.addEventListener('click', () => {
-      focusOverlay.classList.add('hidden');
-      mobileInput.focus();
-    });
-
-    document.addEventListener('click', (e) => {
-      // Click on typing area focuses input
-      if (e.target.closest('.typing-container') && !state.isActive && !state.isFinished) {
-        focusOverlay.classList.add('hidden');
-        mobileInput.focus();
-      }
-    });
-
-    // Results buttons
-    document.getElementById('restartBtn').addEventListener('click', () => {
-      resultsOverlay.classList.remove('show');
-      resetTest();
-    });
-
-    document.getElementById('nextTestBtn').addEventListener('click', () => {
-      resultsOverlay.classList.remove('show');
-      resetTest();
-    });
-
-    document.getElementById('closeResultsBtn').addEventListener('click', () => {
-      resultsOverlay.classList.remove('show');
-    });
-
-    // Command palette
-    document.getElementById('commandBtn').addEventListener('click', openCommandPalette);
-
-    commandInput.addEventListener('input', (e) => {
-      renderCommandList(e.target.value);
-    });
-
-    commandInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeCommandPalette();
-      } else if (e.key === 'Enter') {
-        const selected = commandList.querySelector('.command-item.selected');
-        if (selected) selected.click();
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const items = commandList.querySelectorAll('.command-item');
-        const current = commandList.querySelector('.command-item.selected');
-        if (current && current.nextElementSibling) {
-          current.classList.remove('selected');
-          current.nextElementSibling.classList.add('selected');
-          current.nextElementSibling.scrollIntoView({ block: 'nearest' });
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const current = commandList.querySelector('.command-item.selected');
-        if (current && current.previousElementSibling) {
-          current.classList.remove('selected');
-          current.previousElementSibling.classList.add('selected');
-          current.previousElementSibling.scrollIntoView({ block: 'nearest' });
-        }
-      }
-    });
-
-    commandOverlay.addEventListener('click', (e) => {
-      if (e.target === commandOverlay) closeCommandPalette();
-    });
-
-    // Global keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Command palette: Escape or Ctrl+Shift+P
-      if (e.key === 'Escape' && !commandOverlay.classList.contains('show') && !settingsDrawer.classList.contains('open')) {
-        e.preventDefault();
-        openCommandPalette();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
-        e.preventDefault();
-        openCommandPalette();
-      }
-      // Close command palette with Escape
-      if (e.key === 'Escape' && commandOverlay.classList.contains('show')) {
-        closeCommandPalette();
-      }
-      // Close settings with Escape
-      if (e.key === 'Escape' && settingsDrawer.classList.contains('open')) {
-        closeSettings();
-      }
-    });
-
-    // Settings
-    document.getElementById('settingsBtn').addEventListener('click', openSettings);
-    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
-    settingsOverlay.addEventListener('click', closeSettings);
-
-    function openSettings() {
-      settingsOverlay.classList.add('show');
-      settingsDrawer.classList.add('open');
-      updateSettingButtons();
-      buildThemeGrid();
-    }
-
-    function closeSettings() {
-      settingsOverlay.classList.remove('show');
-      settingsDrawer.classList.remove('open');
-    }
-
-    // Setting controls
-    document.querySelectorAll('.setting-control').forEach(control => {
-      control.addEventListener('click', (e) => {
-        const btn = e.target.closest('.config-btn');
-        if (!btn) return;
-        const setting = control.dataset.setting;
-        const value = btn.dataset.value;
-
-        if (setting === 'stopOnError' || setting === 'difficulty' || setting === 'quickRestart' || setting === 'caretStyle' || setting === 'soundProfile') {
-          state[setting] = value;
-        } else if (setting === 'blindMode' || setting === 'freedomMode' || setting === 'soundEnabled') {
-          state[setting] = value === 'on';
-        }
-
-        updateSettingButtons();
-        updateCaretStyle();
-        saveSettings();
-
-        // Reset test if behavior changed
-        if (['stopOnError', 'difficulty', 'blindMode', 'freedomMode'].includes(setting)) {
-          resetTest();
-        }
-      });
-    });
-
-    // Reset settings
-    document.getElementById('resetSettingsBtn').addEventListener('click', () => {
-      if (confirm('Reset all settings to defaults?')) {
-        localStorage.removeItem('mt_settings');
-        localStorage.removeItem('mt_theme');
-        location.reload();
-      }
-    });
-
-    /* ============================================================
-       INIT
-       ============================================================ */
-    function init() {
-      // Load saved settings
-      loadSettings();
-
-      // Apply theme
-      applyTheme(state.theme);
-
-      // Build theme grid
-      buildThemeGrid();
-
-      // Initial mode buttons
-      updateModeButtons();
-      updateSubModeButtons();
-      updateToggleButtons();
-      updateSettingButtons();
-      updateCaretStyle();
-
-      // Generate initial words
-      state.words = generateWords();
-      renderWords();
-
-      // Focus overlay
-      focusOverlay.classList.remove('hidden');
-
-      // Handle window resize for caret
-      window.addEventListener('resize', () => {
-        updateCaret();
-      });
-
-      // Prevent context menu on typing area
-      wordsContainer.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
-
-    // Start the app
-    init();
-  </script>
+  </aside>
+
+  <!-- ============================================================
+       TOAST / NOTIFICATION CONTAINER
+       ============================================================ -->
+  <div class="toast-container" id="toastContainer" role="status" aria-live="polite"></div>
+
+  <!-- ============================================================
+       SCRIPTS (ES Modules, order matters)
+       ============================================================ -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
