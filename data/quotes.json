@@ -1,1 +1,58 @@
-
+{
+  "short": [
+    { "text": "The quick brown fox jumps over the lazy dog.", "source": "Pangram" },
+    { "text": "To be or not to be, that is the question.", "source": "William Shakespeare, Hamlet" },
+    { "text": "All that glitters is not gold.", "source": "William Shakespeare, The Merchant of Venice" },
+    { "text": "Knowledge is power.", "source": "Francis Bacon" },
+    { "text": "I think, therefore I am.", "source": "René Descartes" },
+    { "text": "The unexamined life is not worth living.", "source": "Socrates" },
+    { "text": "In the beginning was the Word.", "source": "The Gospel of John" },
+    { "text": "Fortune favors the bold.", "source": "Latin Proverb" },
+    { "text": "Nothing ventured, nothing gained.", "source": "Proverb" },
+    { "text": "Simplicity is the ultimate sophistication.", "source": "Leonardo da Vinci" },
+    { "text": "Talk is cheap. Show me the code.", "source": "Linus Torvalds" },
+    { "text": "Premature optimization is the root of all evil.", "source": "Donald Knuth" },
+    { "text": "Any sufficiently advanced technology is indistinguishable from magic.", "source": "Arthur C. Clarke" },
+    { "text": "The best way to predict the future is to invent it.", "source": "Alan Kay" },
+    { "text": "Stay hungry, stay foolish.", "source": "Steve Jobs" }
+  ],
+  "medium": [
+    { "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.", "source": "Jane Austen, Pride and Prejudice" },
+    { "text": "The only thing we have to fear is fear itself — nameless, unreasoning, unjustified terror which paralyzes needed efforts to convert retreat into advance.", "source": "Franklin D. Roosevelt" },
+    { "text": "In the middle of difficulty lies opportunity. The measure of intelligence is the ability to change.", "source": "Albert Einstein" },
+    { "text": "The journey of a thousand miles begins with a single step. Do not wait for leaders; do it alone, person to person.", "source": "Lao Tzu" },
+    { "text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", "source": "Aristotle (attributed)" },
+    { "text": "The greatest glory in living lies not in never falling, but in rising every time we fall.", "source": "Nelson Mandela" },
+    { "text": "Two roads diverged in a wood, and I took the one less traveled by, and that has made all the difference.", "source": "Robert Frost" },
+    { "text": "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.", "source": "Steve Jobs" },
+    { "text": "Programs must be written for people to read, and only incidentally for machines to execute.", "source": "Harold Abelson" },
+    { "text": "There are only two hard things in computer science: cache invalidation and naming things.", "source": "Phil Karlton" },
+    { "text": "Every great developer you know got there by solving problems they were unqualified to solve until they actually did it.", "source": "Patrick McKenzie" },
+    { "text": "The most damaging phrase in the language is: We've always done it this way.", "source": "Grace Hopper" },
+    { "text": "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.", "source": "Antoine de Saint-Exupéry" },
+    { "text": "The future belongs to those who believe in the beauty of their dreams.", "source": "Eleanor Roosevelt" },
+    { "text": "That's one small step for man, one giant leap for mankind.", "source": "Neil Armstrong" }
+  ],
+  "long": [
+    { "text": "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.", "source": "Charles Dickens, A Tale of Two Cities" },
+    { "text": "So we beat on, boats against the current, borne back ceaselessly into the past. And as the years pass, we wonder whether the dreams we chased were ever really ours, or merely echoes of a story someone else began to tell.", "source": "F. Scott Fitzgerald, The Great Gatsby" },
+    { "text": "I am no bird; and no net ensnares me: I am a free human being with an independent will, which I now exert to leave you. I would always rather be happy than dignified, and I have spoken my mind too often to regret it now.", "source": "Charlotte Brontë, Jane Eyre" },
+    { "text": "The only thing standing between you and your goal is the story you keep telling yourself as to why you can't achieve it. Every moment is a fresh beginning, and every sunrise offers the chance to rewrite the chapter you thought was finished.", "source": "Jordan Belfort" },
+    { "text": "Two things are infinite: the universe and human stupidity; and I'm not sure about the universe. We cannot solve our problems with the same thinking we used when we created them, nor can we fix a world we have never truly understood.", "source": "Albert Einstein" },
+    { "text": "Do not go gentle into that good night, old age should burn and rave at close of day; rage, rage against the dying of the light. Though wise men at their end know dark is right, because their words had forked no lightning they do not go gentle into that good night.", "source": "Dylan Thomas" },
+    { "text": "The reasonable man adapts himself to the world: the unreasonable one persists in trying to adapt the world to himself. Therefore all progress depends on the unreasonable man, who sees what could be rather than what is, and refuses to accept the shape of things as final.", "source": "George Bernard Shaw" },
+    { "text": "There is a tide in the affairs of men, which taken at the flood, leads on to fortune; omitted, all the voyage of their life is bound in shallows and in miseries. On such a full sea are we now afloat, and we must take the current when it serves, or lose our ventures.", "source": "William Shakespeare, Julius Caesar" },
+    { "text": "Not all those who wander are lost; the old that is strong does not wither, deep roots are not reached by the frost. From the ashes a fire shall be woken, a light from the shadows shall spring; renewed shall be blade that was broken, the crownless again shall be king.", "source": "J.R.R. Tolkien, The Fellowship of the Ring" },
+    { "text": "The nitrogen in our DNA, the calcium in our teeth, the iron in our blood, the carbon in our apple pies were made in the interiors of collapsing stars. We are made of starstuff, and to understand ourselves we must first understand the cosmos that birthed us.", "source": "Carl Sagan" },
+    { "text": "A programmer's job is not to write code, but to solve problems. Code is merely the medium in which solutions are expressed. The best engineers I have known spent far more time thinking than typing, and far more time listening than speaking.", "source": "Anonymous" },
+    { "text": "We are not makers of history. We are made by history. And the choices we make today, however small, ripple outward in ways we can never fully foresee, shaping a future that will one day look back at us with either gratitude or regret.", "source": "Martin Luther King Jr." }
+  ],
+  "thicc": [
+    { "text": "Call me Ishmael. Some years ago — never mind how long precisely — having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul; whenever I find myself involuntarily pausing before coffin warehouses, and bringing up the rear of every funeral I meet; and especially whenever my hypos get such an upper hand of me, that it requires a strong moral principle to prevent me from deliberately stepping into the street, and methodically knocking people's hats off — then, I account it high time to get to sea as soon as I can.", "source": "Herman Melville, Moby-Dick" },
+    { "text": "Happy families are all alike; every unhappy family is unhappy in its own way. Everything was in confusion in the Oblonskys' house. The wife had discovered that the husband was carrying on an intrigue with a French girl, who had been a governess in their family, and she had announced to her husband that she could not go on living in the same house with him. This position of affairs had now lasted three days, and not only the husband and wife themselves, but all the members of their family and household, were painfully conscious of it. Every person in the house felt that there was no sense in their living together, and that the stray people brought together by chance in any inn had more in common with one another than they, the members of the family and household of the Oblonskys.", "source": "Leo Tolstoy, Anna Karenina" },
+    { "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters. My dear Mr. Bennet, said his lady to him one day, have you heard that Netherfield Park is let at last? Mr. Bennet replied that he had not. But it is, returned she; for Mrs. Long has just been here, and she told me all about it.", "source": "Jane Austen, Pride and Prejudice" },
+    { "text": "Many years later, as he faced the firing squad, Colonel Aureliano Buendía was to remember that distant afternoon when his father took him to discover ice. At that time Macondo was a village of twenty adobe houses, built on the bank of a river of clear water that ran along a bed of polished stones, which were white and enormous, like prehistoric eggs. The world was so recent that many things lacked names, and in order to indicate them it was necessary to point. Every year during the month of March a family of ragged gypsies would set up their tents near the village, and with a great uproar of pipes and kettledrums they would display new inventions.", "source": "Gabriel García Márquez, One Hundred Years of Solitude" },
+    { "text": "The sky above the port was the color of television, tuned to a dead channel. It's not like I'm using, Case had thought as he jacked in, it's not like I'm using, and it's not like I have a choice. The Sprawl was a long strange way home over the Pacific now, and he was no console man, no cyberspace cowboy. Just another hustler, trying to make it through. But when the Japanese had a chance to buy his nervous system, they bought it, and now he was somewhere else entirely, in a place where the only thing that mattered was the ice, and the ice was everything.", "source": "William Gibson, Neuromancer" },
+    { "text": "We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness. That to secure these rights, Governments are instituted among Men, deriving their just powers from the consent of the governed, That whenever any Form of Government becomes destructive of these ends, it is the Right of the People to alter or to abolish it, and to institute new Government, laying its foundation on such principles and organizing its powers in such form, as to them shall seem most likely to effect their Safety and Happiness.", "source": "Thomas Jefferson, Declaration of Independence" }
+  ]
+}
