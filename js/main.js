@@ -8,23 +8,16 @@
 // IMPORTS
 // ============================================================
 
-// Core
 import { state, initState, subscribe, update, getState } from './state.js';
 import { Router } from './router.js';
-
-// Engine
 import { Engine } from './engine.js';
 import { Stats } from './stats.js';
 import { Sound } from './sound.js';
-
-// Features
 import { Themes } from './themes.js';
 import { Funbox } from './funbox.js';
 import { CustomText } from './customText.js';
 import { CommandPalette } from './commandPalette.js';
 import { Screenshot } from './screenshot.js';
-
-// Pages
 import { TestPage } from './pages/test.js';
 import { AboutPage } from './pages/about.js';
 import { LeaderboardPage } from './pages/leaderboard.js';
@@ -37,39 +30,23 @@ import { StatsPage } from './pages/stats.js';
 const DOM = {
   html: document.documentElement,
   body: document.body,
-
-  // App shell
   app: document.getElementById('app'),
   sidebar: document.getElementById('sidebar'),
   main: document.getElementById('main'),
-
-  // Navigation
   navItems: document.querySelectorAll('[data-nav]'),
-
-  // Global buttons
   commandBtn: document.getElementById('commandBtn'),
   settingsBtn: document.getElementById('settingsBtn'),
-
-  // Modals
   resultsOverlay: document.getElementById('resultsOverlay'),
   commandOverlay: document.getElementById('commandOverlay'),
   customTextOverlay: document.getElementById('customTextOverlay'),
-
-  // Drawer
   settingsOverlay: document.getElementById('settingsOverlay'),
   settingsDrawer: document.getElementById('settingsDrawer'),
-
-  // Overlays
   scanlineOverlay: document.getElementById('scanlineOverlay'),
-
-  // Toast
   toastContainer: document.getElementById('toastContainer'),
 };
 
 // ============================================================
 // MODULE REGISTRY
-// Central registry so modules can talk to each other without
-// circular imports.
 // ============================================================
 
 const modules = {
@@ -96,34 +73,37 @@ const modules = {
 
 async function bootstrap() {
   try {
-    // ---------- 1. Initialize state from storage ----------
+    // 1. Initialize state from storage
     initState();
 
-    // ---------- 2. Apply saved theme + reduce motion + scanlines ----------
+    // 2. Apply saved theme + reduce motion + scanlines
     applyInitialPreferences();
 
-    // ---------- 3. Initialize core modules ----------
-    initCoreModules();
+    // 3. Load word lists + quotes
+    const data = await loadData();
 
-    // ---------- 4. Initialize features ----------
+    // 4. Initialize core modules
+    initCoreModules(data);
+
+    // 5. Initialize features
     initFeatureModules();
 
-    // ---------- 5. Initialize pages ----------
+    // 6. Initialize pages
     initPages();
 
-    // ---------- 6. Initialize router ----------
+    // 7. Initialize router
     initRouter();
 
-    // ---------- 7. Attach global listeners ----------
+    // 8. Attach global listeners
     attachGlobalListeners();
 
-    // ---------- 8. Attach sidebar navigation ----------
+    // 9. Attach sidebar navigation
     attachNavigation();
 
-    // ---------- 9. Expose to window for debugging ----------
+    // 10. Expose to window for debugging
     exposeToWindow();
 
-    // ---------- 10. Mark app as ready ----------
+    // 11. Mark app as ready
     DOM.html.setAttribute('data-app-ready', 'true');
 
     console.info(
@@ -163,13 +143,13 @@ function applyInitialPreferences() {
 
   // Scanlines
   if (s.scanlines) {
-    DOM.scanlineOverlay.classList.add('active');
+    DOM.scanlineOverlay?.classList.add('active');
   }
 
   // Font size
   applyFontSize(s.fontSize || 'md');
 
-  // Caret style (class applied later by caret.js after DOM ready)
+  // Caret style
   DOM.html.setAttribute('data-caret-style', s.caretStyle || 'line');
 }
 
@@ -183,7 +163,7 @@ function applyFontSize(size) {
 // 2. CORE MODULES
 // ============================================================
 
-function initCoreModules() {
+function initCoreModules(data) {
   // Sound engine
   modules.sound = new Sound({
     enabled: getState().soundEnabled,
@@ -203,6 +183,14 @@ function initCoreModules() {
     onFinish: handleTestFinish,
     onTick: handleTestTick,
   });
+
+  // Inject loaded data (word lists + quotes)
+  if (data) {
+    modules.engine.setData(data);
+  }
+
+  // Init engine (binds DOM, attaches listeners, renders initial test)
+  modules.engine.init();
 
   // Wire engine → global state events
   subscribe('engine:finish', handleTestFinish);
@@ -240,7 +228,10 @@ function initFeatureModules() {
     },
   });
 
-  // Funbox (mode modifiers)
+  // Mount theme grid into settings drawer
+  modules.themes.mountGrid();
+
+  // Funbox
   modules.funbox = new Funbox({
     activeMode: getState().funbox || 'none',
     onModeChange: (mode) => update('funbox', mode),
@@ -248,9 +239,9 @@ function initFeatureModules() {
 
   // Custom text
   modules.customText = new CustomText({
-    onApply: (text, options) => {
-      update('customText', { text, options });
-      modules.engine.loadCustomText(text, options);
+    onApply: (words, options) => {
+      update('customText', { text: words.join(' '), options });
+      modules.engine.loadCustomText(words.join(' '), options);
       closeCustomTextModal();
     },
   });
@@ -265,7 +256,7 @@ function initFeatureModules() {
     engine: modules.engine,
     themes: modules.themes,
     funbox: modules.funbox,
-    router: modules.router,
+    router: null, // set after router init
   });
 
   // Screenshot
@@ -288,21 +279,25 @@ function initPages() {
     state,
     update,
   });
+  modules.pages.test.mount();
 
   modules.pages.about = new AboutPage({
     state,
     stats: modules.stats,
   });
+  modules.pages.about.mount();
 
   modules.pages.leaderboard = new LeaderboardPage({
     state,
     stats: modules.stats,
   });
+  modules.pages.leaderboard.mount();
 
   modules.pages.stats = new StatsPage({
     state,
     stats: modules.stats,
   });
+  modules.pages.stats.mount();
 }
 
 // ============================================================
@@ -312,6 +307,7 @@ function initPages() {
 function initRouter() {
   modules.router = new Router({
     defaultRoute: 'test',
+    container: DOM.main,
     routes: {
       test: {
         page: modules.pages.test,
@@ -342,6 +338,9 @@ function initRouter() {
     },
   });
 
+  // Give command palette a reference to the router
+  modules.commandPalette.router = modules.router;
+
   modules.router.start();
 }
 
@@ -350,65 +349,65 @@ function initRouter() {
 // ============================================================
 
 function attachGlobalListeners() {
-  // ---------- Global keyboard shortcuts ----------
+  // Global keyboard shortcuts
   document.addEventListener('keydown', handleGlobalKeyDown, true);
 
-  // ---------- Click outside to close modals ----------
-  DOM.commandOverlay.addEventListener('click', (e) => {
+  // Click outside to close modals
+  DOM.commandOverlay?.addEventListener('click', (e) => {
     if (e.target === DOM.commandOverlay) closeCommandPalette();
   });
 
-  DOM.resultsOverlay.addEventListener('click', (e) => {
+  DOM.resultsOverlay?.addEventListener('click', (e) => {
     if (e.target === DOM.resultsOverlay) closeResults();
   });
 
-  DOM.customTextOverlay.addEventListener('click', (e) => {
+  DOM.customTextOverlay?.addEventListener('click', (e) => {
     if (e.target === DOM.customTextOverlay) closeCustomTextModal();
   });
 
-  // ---------- Settings drawer ----------
-  DOM.settingsBtn.addEventListener('click', openSettings);
-  DOM.settingsOverlay.addEventListener('click', closeSettings);
-  document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+  // Settings drawer
+  DOM.settingsBtn?.addEventListener('click', openSettings);
+  DOM.settingsOverlay?.addEventListener('click', closeSettings);
+  document.getElementById('closeSettingsBtn')?.addEventListener('click', closeSettings);
 
-  // ---------- Command palette trigger ----------
-  DOM.commandBtn.addEventListener('click', openCommandPalette);
+  // Command palette trigger
+  DOM.commandBtn?.addEventListener('click', openCommandPalette);
 
-  // ---------- Custom text modal buttons ----------
-  document.getElementById('closeCustomTextBtn').addEventListener('click', closeCustomTextModal);
-  document.getElementById('cancelCustomTextBtn').addEventListener('click', closeCustomTextModal);
-  document.getElementById('applyCustomTextBtn').addEventListener('click', () => {
+  // Custom text modal buttons
+  document.getElementById('closeCustomTextBtn')?.addEventListener('click', closeCustomTextModal);
+  document.getElementById('cancelCustomTextBtn')?.addEventListener('click', closeCustomTextModal);
+  document.getElementById('applyCustomTextBtn')?.addEventListener('click', () => {
     const textarea = document.getElementById('customTextArea');
     const mode = document.querySelector('[data-setting="customTextMode"] .active')?.dataset.value || 'simple';
     const delimiter = document.querySelector('[data-setting="customTextDelimiter"] .active')?.dataset.value || 'pipe';
     modules.customText.apply(textarea.value, { mode, delimiter });
   });
 
-  document.getElementById('stripZeroWidthBtn').addEventListener('click', () => {
+  document.getElementById('stripZeroWidthBtn')?.addEventListener('click', () => {
     const textarea = document.getElementById('customTextArea');
     textarea.value = modules.customText.stripZeroWidth(textarea.value);
   });
 
-  document.getElementById('normalizeTypographyBtn').addEventListener('click', () => {
+  document.getElementById('normalizeTypographyBtn')?.addEventListener('click', () => {
     const textarea = document.getElementById('customTextArea');
     textarea.value = modules.customText.normalizeTypography(textarea.value);
   });
 
-  // ---------- Results modal buttons ----------
-  document.getElementById('restartBtn').addEventListener('click', () => {
+  // Results modal buttons
+  document.getElementById('restartBtn')?.addEventListener('click', () => {
     closeResults();
     modules.engine.restart();
   });
 
-  document.getElementById('nextTestBtn').addEventListener('click', () => {
+  document.getElementById('nextTestBtn')?.addEventListener('click', () => {
     closeResults();
     modules.engine.restart({ reroll: true });
   });
 
-  document.getElementById('closeResultsBtn').addEventListener('click', closeResults);
+  document.getElementById('closeResultsBtn')?.addEventListener('click', closeResults);
 
-  document.getElementById('screenshotBtn').addEventListener('click', async () => {
-    const modal = DOM.resultsOverlay.querySelector('.modal--results');
+  document.getElementById('screenshotBtn')?.addEventListener('click', async () => {
+    const modal = DOM.resultsOverlay?.querySelector('.modal--results');
     if (modal) {
       await modules.screenshot.captureElement(modal, {
         filename: `typeflow-${Date.now()}.png`,
@@ -416,19 +415,21 @@ function attachGlobalListeners() {
     }
   });
 
-  // ---------- Settings drawer controls ----------
+  // Settings drawer controls
   attachSettingsControls();
 
-  // ---------- Visibility change: pause if tab loses focus ----------
+  // Visibility change: pause if tab loses focus
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       modules.engine.pause();
+      modules.sound.suspend();
     } else {
       modules.engine.resume();
+      modules.sound.resume();
     }
   });
 
-  // ---------- beforeunload: flush state ----------
+  // beforeunload: flush state
   window.addEventListener('beforeunload', () => {
     modules.engine.flush?.();
   });
@@ -441,29 +442,28 @@ function attachGlobalListeners() {
 function handleGlobalKeyDown(e) {
   const s = getState();
 
-  // ---------- Esc / Ctrl+Shift+P → command palette ----------
+  // Esc / Ctrl+Shift+P → command palette
   if (e.key === 'Escape' && !e.ctrlKey && !e.metaKey) {
-    if (DOM.commandOverlay.hasAttribute('hidden') === false) {
+    if (DOM.commandOverlay && !DOM.commandOverlay.hasAttribute('hidden')) {
       e.preventDefault();
       closeCommandPalette();
       return;
     }
-    if (!DOM.settingsDrawer.hasAttribute('hidden')) {
+    if (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) {
       e.preventDefault();
       closeSettings();
       return;
     }
-    if (!DOM.resultsOverlay.hasAttribute('hidden')) {
+    if (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) {
       e.preventDefault();
       closeResults();
       return;
     }
-    if (!DOM.customTextOverlay.hasAttribute('hidden')) {
+    if (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden')) {
       e.preventDefault();
       closeCustomTextModal();
       return;
     }
-    // Open command palette
     e.preventDefault();
     openCommandPalette();
     return;
@@ -471,7 +471,7 @@ function handleGlobalKeyDown(e) {
 
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
     e.preventDefault();
-    if (DOM.commandOverlay.hasAttribute('hidden')) {
+    if (DOM.commandOverlay?.hasAttribute('hidden')) {
       openCommandPalette();
     } else {
       closeCommandPalette();
@@ -479,7 +479,7 @@ function handleGlobalKeyDown(e) {
     return;
   }
 
-  // ---------- Quick restart ----------
+  // Quick restart
   if (s.quickRestart !== 'off' && !isModalOpen()) {
     if (s.quickRestart === 'tab' && e.key === 'Tab') {
       e.preventDefault();
@@ -524,7 +524,7 @@ function updateNavActive(route) {
 // ============================================================
 
 function attachSettingsControls() {
-  // Toggle groups (stopOnError, difficulty, blindMode, etc.)
+  // Toggle groups
   document.querySelectorAll('.setting-control').forEach((control) => {
     control.addEventListener('click', (e) => {
       const btn = e.target.closest('.config-btn');
@@ -533,12 +533,9 @@ function attachSettingsControls() {
       const value = btn.dataset.value;
       if (!setting || value === undefined) return;
 
-      // Convert "on"/"off" to booleans
       const coerced = value === 'on' ? true : value === 'off' ? false : value;
 
       update(setting, coerced);
-
-      // Immediate side effects
       applySettingSideEffects(setting, coerced);
     });
   });
@@ -557,21 +554,21 @@ function attachSettingsControls() {
   // Custom accent color
   const accent = document.getElementById('customAccent');
   if (accent) {
-    accent.value = getState().customAccent || getState().accent || '#e2b714';
+    accent.value = getState().customAccent || '#e2b714';
     accent.addEventListener('input', (e) => {
       modules.themes.setCustomAccent(e.target.value);
     });
   }
 
   // Reset settings
-  document.getElementById('resetSettingsBtn').addEventListener('click', () => {
+  document.getElementById('resetSettingsBtn')?.addEventListener('click', () => {
     if (!confirm('Reset all settings to defaults?')) return;
     localStorage.removeItem('typeflow:settings');
     location.reload();
   });
 
   // Clear all data
-  document.getElementById('clearDataBtn').addEventListener('click', () => {
+  document.getElementById('clearDataBtn')?.addEventListener('click', () => {
     if (!confirm('This will delete all your test history and settings. Continue?')) return;
     localStorage.clear();
     indexedDB.deleteDatabase('typeflow');
@@ -595,7 +592,7 @@ function applySettingSideEffects(setting, value) {
       modules.sound.setProfile(value);
       break;
     case 'scanlines':
-      DOM.scanlineOverlay.classList.toggle('active', value);
+      DOM.scanlineOverlay?.classList.toggle('active', value);
       break;
     case 'reduceMotion':
       DOM.html.setAttribute('data-reduce-motion', value ? 'true' : 'false');
@@ -617,6 +614,7 @@ function applySettingSideEffects(setting, value) {
       break;
     case 'funbox':
       modules.funbox.setMode(value);
+      modules.engine.setTransform(modules.funbox.getTransform());
       break;
     default:
       break;
@@ -628,63 +626,58 @@ function applySettingSideEffects(setting, value) {
 // ============================================================
 
 function openCommandPalette() {
-  DOM.commandOverlay.removeAttribute('hidden');
+  DOM.commandOverlay?.removeAttribute('hidden');
   modules.commandPalette.open();
 }
 
 function closeCommandPalette() {
-  DOM.commandOverlay.setAttribute('hidden', '');
+  DOM.commandOverlay?.setAttribute('hidden', '');
   modules.commandPalette.close();
 }
 
 function openSettings() {
-  DOM.settingsOverlay.removeAttribute('hidden');
-  DOM.settingsDrawer.removeAttribute('hidden');
-  // Trigger drawer slide-in on next frame
-  requestAnimationFrame(() => {
-    DOM.settingsDrawer.classList.add('open');
-  });
+  DOM.settingsOverlay?.removeAttribute('hidden');
+  DOM.settingsDrawer?.removeAttribute('hidden');
   modules.engine.pause();
 }
 
 function closeSettings() {
-  DOM.settingsDrawer.classList.remove('open');
-  setTimeout(() => {
-    DOM.settingsOverlay.setAttribute('hidden', '');
-    DOM.settingsDrawer.setAttribute('hidden', '');
-    modules.engine.resume();
-  }, 300);
+  DOM.settingsOverlay?.setAttribute('hidden', '');
+  DOM.settingsDrawer?.setAttribute('hidden', '');
+  modules.engine.resume();
 }
 
 function closeResults() {
-  DOM.resultsOverlay.setAttribute('hidden', '');
+  DOM.resultsOverlay?.setAttribute('hidden', '');
   modules.engine.focus();
 }
 
 function openCustomTextModal() {
-  DOM.customTextOverlay.removeAttribute('hidden');
+  DOM.customTextOverlay?.removeAttribute('hidden');
   const textarea = document.getElementById('customTextArea');
-  textarea.value = getState().customText?.text || '';
-  textarea.focus();
+  if (textarea) {
+    textarea.value = getState().customText?.text || '';
+    textarea.focus();
+  }
 }
 
 function closeCustomTextModal() {
-  DOM.customTextOverlay.setAttribute('hidden', '');
+  DOM.customTextOverlay?.setAttribute('hidden', '');
 }
 
 function closeAllModals() {
-  if (!DOM.commandOverlay.hasAttribute('hidden')) closeCommandPalette();
-  if (!DOM.settingsDrawer.hasAttribute('hidden')) closeSettings();
-  if (!DOM.resultsOverlay.hasAttribute('hidden')) closeResults();
-  if (!DOM.customTextOverlay.hasAttribute('hidden')) closeCustomTextModal();
+  if (DOM.commandOverlay && !DOM.commandOverlay.hasAttribute('hidden')) closeCommandPalette();
+  if (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) closeSettings();
+  if (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) closeResults();
+  if (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden')) closeCustomTextModal();
 }
 
 function isModalOpen() {
   return (
-    !DOM.commandOverlay.hasAttribute('hidden') ||
-    !DOM.settingsDrawer.hasAttribute('hidden') ||
-    !DOM.resultsOverlay.hasAttribute('hidden') ||
-    !DOM.customTextOverlay.hasAttribute('hidden')
+    (DOM.commandOverlay && !DOM.commandOverlay.hasAttribute('hidden')) ||
+    (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) ||
+    (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) ||
+    (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden'))
   );
 }
 
@@ -692,143 +685,91 @@ function isModalOpen() {
 // 11. TEST LIFECYCLE HOOKS
 // ============================================================
 
-function handleTestFinish(result) {
-  // Save result to storage
-  modules.stats.saveResult(result);
+async function handleTestFinish(result) {
+  // Save result + update stats
+  try {
+    await modules.stats.saveResult(result);
+  } catch (err) {
+    console.warn('[main] failed to save result:', err);
+  }
 
-  // Show results modal
-  showResults(result);
+  // Delegate to test page (handles count-up, chart, confetti, PB badge)
+  modules.pages.test.showResults(result);
 }
 
 function handleTestTick(tick) {
   // Live stat updates handled by engine directly
-  // This hook exists for any cross-module reactivity
-}
-
-function showResults(result) {
-  // Populate results modal
-  const { wpm, raw, acc, consistency, chars, time, chartData, isPB } = result;
-
-  document.getElementById('resultWpm').textContent = '0';
-  document.getElementById('resultAcc').textContent = '0%';
-  document.getElementById('resultRaw').textContent = raw;
-  document.getElementById('resultConsistency').textContent = `${consistency}%`;
-  document.getElementById('resultChars').textContent =
-    `${chars.correct} / ${chars.incorrect} / ${chars.extra} / ${chars.missed}`;
-  document.getElementById('resultTime').textContent = `${Math.round(time)}s`;
-
-  // Show modal
-  DOM.resultsOverlay.removeAttribute('hidden');
-
-  // Animate count-up
-  animateCountUp(document.getElementById('resultWpm'), 0, wpm, 700);
-  animateCountUp(document.getElementById('resultAcc'), 0, acc, 700, '%');
-
-  // Draw chart
-  drawWpmChart(chartData);
-
-  // Confetti on PB
-  if (isPB) {
-    spawnConfetti();
-    spawnPBBadge();
-  }
-}
-
-function animateCountUp(el, from, to, duration = 600, suffix = '') {
-  const start = performance.now();
-  function frame(now) {
-    const t = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - t, 3);
-    const value = from + (to - from) * eased;
-    el.textContent = `${Math.round(value)}${suffix}`;
-    if (t < 1) requestAnimationFrame(frame);
-    else el.textContent = `${Math.round(to)}${suffix}`;
-  }
-  requestAnimationFrame(frame);
-}
-
-function drawWpmChart(data) {
-  const svg = document.getElementById('wpmChart');
-  if (!svg || !data || data.length < 2) {
-    svg.innerHTML = '';
-    return;
-  }
-
-  const W = 600;
-  const H = 200;
-  const pad = { top: 20, right: 20, bottom: 28, left: 36 };
-  const chartW = W - pad.left - pad.right;
-  const chartH = H - pad.top - pad.bottom;
-
-  const maxWpm = Math.max(...data.map((d) => Math.max(d.wpm, d.raw)), 10);
-  const maxTime = Math.max(...data.map((d) => d.time), 1);
-
-  const x = (t) => pad.left + (t / maxTime) * chartW;
-  const y = (v) => pad.top + chartH - (v / maxWpm) * chartH;
-
-  const wpmPath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`).join(' ');
-  const rawPath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`).join(' ');
-
-  const errorMarkers = data
-    .filter((d) => d.errors > 0)
-    .map((d) => `<circle cx="${x(d.time)}" cy="${y(d.wpm)}" r="3" fill="var(--error)" />`)
-    .join('');
-
-  const gridLines = Array.from({ length: 5 }, (_, i) => {
-    const gy = pad.top + (i / 4) * chartH;
-    const val = Math.round(maxWpm * (1 - i / 4));
-    return `<line x1="${pad.left}" y1="${gy}" x2="${W - pad.right}" y2="${gy}" stroke="var(--border)" stroke-dasharray="4" />`
-      + `<text x="${pad.left - 6}" y="${gy + 3}" text-anchor="end" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">${val}</text>`;
-  }).join('');
-
-  svg.innerHTML = `
-    ${gridLines}
-    <path d="${rawPath}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linejoin="round" />
-    <path d="${wpmPath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" />
-    ${errorMarkers}
-  `;
-}
-
-function spawnConfetti() {
-  const container = document.createElement('div');
-  container.className = 'confetti';
-  document.body.appendChild(container);
-
-  const colors = ['#e2b714', '#ff6b6b', '#4ecdc4', '#95e1d3', '#f38181', '#aa96da'];
-  const count = 80;
-
-  for (let i = 0; i < count; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti__piece';
-    piece.style.left = `${Math.random() * 100}%`;
-    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.setProperty('--fall-duration', `${2 + Math.random() * 2}s`);
-    piece.style.setProperty('--fall-delay', `${Math.random() * 0.4}s`);
-    piece.style.width = `${4 + Math.random() * 6}px`;
-    piece.style.height = `${8 + Math.random() * 10}px`;
-    piece.style.borderRadius = Math.random() > 0.5 ? '2px' : '50%';
-    container.appendChild(piece);
-  }
-
-  setTimeout(() => container.remove(), 5000);
-}
-
-function spawnPBBadge() {
-  const modal = DOM.resultsOverlay.querySelector('.modal--results');
-  if (!modal) return;
-  const badge = document.createElement('div');
-  badge.className = 'pb-badge';
-  badge.textContent = '★ new personal best';
-  badge.style.position = 'absolute';
-  badge.style.top = 'var(--space-lg)';
-  badge.style.right = 'var(--space-lg)';
-  modal.style.position = 'relative';
-  modal.appendChild(badge);
-  setTimeout(() => badge.remove(), 4000);
+  // Hook exists for future cross-module reactivity
 }
 
 // ============================================================
-// 12. UTILITIES
+// 12. DATA LOADING
+// ============================================================
+
+const DATA_VERSION = 'v1';
+const DATA_CACHE_KEY = `typeflow:data:${DATA_VERSION}`;
+
+async function loadData() {
+  // 1. Try localStorage cache first (instant)
+  try {
+    const cached = localStorage.getItem(DATA_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.words && parsed.quotes) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[main] data cache read failed, fetching fresh:', err);
+  }
+
+  // 2. Fetch both files in parallel
+  try {
+    const [wordsRes, quotesRes] = await Promise.all([
+      fetch('./data/words.json'),
+      fetch('./data/quotes.json'),
+    ]);
+
+    if (!wordsRes.ok || !quotesRes.ok) {
+      throw new Error(`fetch failed: words=${wordsRes.status} quotes=${quotesRes.status}`);
+    }
+
+    const [words, quotes] = await Promise.all([
+      wordsRes.json(),
+      quotesRes.json(),
+    ]);
+
+    const data = { words, quotes };
+
+    // 3. Cache for next visit
+    try {
+      localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+    } catch (err) {
+      console.warn('[main] data cache write failed:', err);
+    }
+
+    return data;
+  } catch (err) {
+    console.error('[main] failed to load data files:', err);
+    // Safe fallback so the app still boots
+    return {
+      words: {
+        english: ['type', 'to', 'start', 'loading', 'data'],
+        english1k: [],
+        code: [],
+      },
+      quotes: {
+        short: [],
+        medium: [],
+        long: [],
+        thicc: [],
+      },
+    };
+  }
+}
+
+// ============================================================
+// 13. UTILITIES
 // ============================================================
 
 function lightenHex(hex, amount) {
@@ -865,7 +806,7 @@ function showFatalError(err) {
 }
 
 // ============================================================
-// 13. EXPOSE FOR DEBUGGING
+// 14. EXPOSE FOR DEBUGGING
 // ============================================================
 
 function exposeToWindow() {
@@ -880,7 +821,7 @@ function exposeToWindow() {
 }
 
 // ============================================================
-// 14. KICKOFF
+// 15. KICKOFF
 // ============================================================
 
 if (document.readyState === 'loading') {
