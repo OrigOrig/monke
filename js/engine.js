@@ -6,8 +6,6 @@
    ============================================================ */
 
 import { update, getState, incrementTestsStarted } from './state.js';
-import { WORDS_ENGLISH, WORDS_ENGLISH_1K, WORDS_CODE } from './data/words.js';
-import { QUOTES } from './data/quotes.js';
 
 // ============================================================
 // 1. CONSTANTS
@@ -55,11 +53,11 @@ export class Engine {
     };
 
     // Runtime state
-    this.words = [];           // Array of word strings
-    this.typed = [];           // Array of typed strings (parallel to words)
-    this.wordIndex = 0;        // Current word index
-    this.letterIndex = 0;      // Current letter index within word
-    this.wordsPerLine = [];    // Cache for caret line logic
+    this.words = [];
+    this.typed = [];
+    this.wordIndex = 0;
+    this.letterIndex = 0;
+    this.wordsPerLine = [];
 
     // Timing
     this.startTime = 0;
@@ -100,6 +98,9 @@ export class Engine {
       caretBlink: true,
     };
 
+    // Word list + quotes (injected at boot via setData)
+    this.data = null;
+
     // Funbox transform (set externally)
     this.transform = null;
 
@@ -125,7 +126,7 @@ export class Engine {
     this.dom.liveWpm = document.getElementById('liveWpm');
     this.dom.liveAcc = document.getElementById('liveAcc');
     this.dom.mobileInput = document.getElementById('mobileInput');
-    this.dom.typingWrap = this.dom.container.closest('.typing-wrap');
+    this.dom.typingWrap = this.dom.container?.closest('.typing-wrap');
 
     if (!this.dom.container || !this.dom.words) {
       console.warn('[engine] critical DOM elements not found');
@@ -136,8 +137,8 @@ export class Engine {
     document.addEventListener('keydown', this._handleKeyDown);
     this.dom.container.addEventListener('focus', this._handleFocus);
     this.dom.container.addEventListener('blur', this._handleBlur);
-    this.dom.focusOverlay.addEventListener('click', this._handleOverlayClick);
-    this.dom.mobileInput.addEventListener('input', this._handleMobileInput);
+    this.dom.focusOverlay?.addEventListener('click', this._handleOverlayClick);
+    this.dom.mobileInput?.addEventListener('input', this._handleMobileInput);
 
     // Caret style from state
     this.setCaretStyle(getState().caretStyle || 'line');
@@ -150,6 +151,20 @@ export class Engine {
     this.focus();
   }
 
+  /**
+   * Inject word lists + quotes at boot. Called by main.js.
+   */
+  setData(data) {
+    this.data = data || {};
+    // Re-generate words if a test is already loaded
+    if (this.words.length === 0) {
+      this.words = this._generateWords();
+      this._renderWords();
+      this._applyTypedState();
+      this._updateCaret();
+    }
+  }
+
   // ============================================================
   // FOCUS MANAGEMENT
   // ============================================================
@@ -157,25 +172,25 @@ export class Engine {
   focus() {
     if (!this.dom.container) return;
     this.dom.container.focus({ preventScroll: true });
-    this.dom.mobileInput.focus({ preventScroll: true });
+    this.dom.mobileInput?.focus({ preventScroll: true });
   }
 
   blur() {
     if (!this.dom.container) return;
     this.dom.container.blur();
-    this.dom.mobileInput.blur();
+    this.dom.mobileInput?.blur();
   }
 
   _handleFocus() {
     this.isFocused = true;
-    this.dom.focusOverlay.classList.add('hidden');
+    this.dom.focusOverlay?.classList.add('hidden');
     this._scheduleIdle();
   }
 
   _handleBlur() {
     this.isFocused = false;
     if (!this.isFinished && !this.isActive) {
-      this.dom.focusOverlay.classList.remove('hidden');
+      this.dom.focusOverlay?.classList.remove('hidden');
     }
   }
 
@@ -188,7 +203,6 @@ export class Engine {
   // ============================================================
 
   restart({ reroll = true } = {}) {
-    // Stop timers
     this._stopTick();
     this._clearIdle();
 
@@ -215,6 +229,14 @@ export class Engine {
     this.letterIndex = 0;
     this.typed = [];
 
+    // Reset stats engine
+    this.stats?.reset?.();
+
+    // Reset funbox per-test state
+    if (this.state.funbox && this.funbox?.onTestRestart) {
+      // no-op if funbox not attached
+    }
+
     // Generate words
     if (reroll || this.words.length === 0) {
       this.words = this._generateWords();
@@ -228,7 +250,7 @@ export class Engine {
 
     // Show focus overlay if not focused
     if (!this.isFocused) {
-      this.dom.focusOverlay.classList.remove('hidden');
+      this.dom.focusOverlay?.classList.remove('hidden');
     }
 
     // Emit
@@ -257,6 +279,7 @@ export class Engine {
 
   _generateWords() {
     const s = this.state;
+    const data = this.data || {};
 
     // Zen mode
     if (s.mode === 'zen') return [];
@@ -270,18 +293,26 @@ export class Engine {
 
     // Quote mode
     if (s.mode === 'quote') {
-      const set = QUOTES[s.quoteLength || 'medium'] || QUOTES.medium;
+      const quotes = data.quotes || {};
+      const set = quotes[s.quoteLength || 'medium'] || quotes.medium || [];
+      if (!set.length) return ['no', 'quotes', 'available'];
       const quote = set[Math.floor(Math.random() * set.length)];
       this.currentQuote = quote;
       return quote.text.split(/\s+/).filter(Boolean);
     }
 
     // Time or words mode — sample from word list
+    const words = data.words || {};
     const wordList = s.language === 'code'
-      ? WORDS_CODE
+      ? (words.code || words.english || [])
       : s.language === 'english1k'
-        ? WORDS_ENGLISH_1K
-        : WORDS_ENGLISH;
+        ? (words.english1k || words.english || [])
+        : (words.english || []);
+
+    if (!wordList.length) {
+      // Fallback so the app doesn't die
+      return ['type', 'to', 'start', 'loading', 'words'];
+    }
 
     const count = s.mode === 'time'
       ? this._estimateWordCount()
@@ -298,7 +329,6 @@ export class Engine {
   }
 
   _estimateWordCount() {
-    // Roughly: 60s ≈ 120 words at 100wpm. Add generous buffer.
     const seconds = this.state.timeLimit || 30;
     return Math.max(50, Math.ceil((seconds / 60) * 220));
   }
@@ -308,11 +338,9 @@ export class Engine {
     let out = word;
 
     if (s.punctuation) {
-      // Capitalize first letter sometimes
       if (Math.random() < 0.18) {
         out = out.charAt(0).toUpperCase() + out.slice(1);
       }
-      // Add trailing punctuation sometimes
       if (Math.random() < 0.25) {
         out += PUNCTUATION[Math.floor(Math.random() * PUNCTUATION.length)];
       }
@@ -320,7 +348,6 @@ export class Engine {
 
     if (s.numbers && Math.random() < 0.14) {
       const num = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
-      // Prepend or append
       out = Math.random() < 0.5 ? num + out : out + num;
     }
 
@@ -347,10 +374,10 @@ export class Engine {
 
   _normalizeText(text) {
     return String(text)
-      .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width
-      .replace(/[\u2018\u2019]/g, "'")        // smart quotes
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/[\u2018\u2019]/g, "'")
       .replace(/[\u201C\u201D]/g, '"')
-      .replace(/\u2013|\u2014/g, '-')         // en/em dash
+      .replace(/\u2013|\u2014/g, '-')
       .replace(/\r\n/g, '\n');
   }
 
@@ -374,6 +401,7 @@ export class Engine {
 
   _renderWords() {
     const wrap = this.dom.words;
+    if (!wrap) return;
     wrap.innerHTML = '';
 
     if (this.state.mode === 'zen' && this.words.length === 0) {
@@ -413,7 +441,8 @@ export class Engine {
   }
 
   _applyTypedState() {
-    const wordEls = this.dom.words.querySelectorAll('.word');
+    const wordEls = this.dom.words?.querySelectorAll('.word');
+    if (!wordEls) return;
 
     wordEls.forEach((wordEl, wi) => {
       const originalWord = this.words[wi];
@@ -442,7 +471,6 @@ export class Engine {
       const extraCount = Math.max(0, typedWord.length - transformedWord.length);
       if (extraCount > 0) {
         const existingExtras = wordEl.querySelectorAll('.letter.extra');
-        // Remove any existing extras we appended previously
         existingExtras.forEach((el) => el.remove());
         for (let i = 0; i < extraCount; i++) {
           const ch = typedWord[transformedWord.length + i];
@@ -461,7 +489,6 @@ export class Engine {
         }
       }
 
-      // Active class
       wordEl.classList.toggle('active', wi === this.wordIndex);
     });
   }
@@ -480,7 +507,7 @@ export class Engine {
     }
     caret.classList.remove('off');
 
-    const activeWord = this.dom.words.querySelector('.word.active');
+    const activeWord = this.dom.words?.querySelector('.word.active');
     if (!activeWord) {
       caret.style.opacity = '0';
       return;
@@ -516,7 +543,6 @@ export class Engine {
     caret.style.top = `${top}px`;
     caret.style.height = `${height}px`;
 
-    // Caret style classes
     caret.className = 'caret';
     if (this.settings.caretStyle === 'smooth') caret.classList.add('smooth');
     if (this.settings.caretStyle === 'block') caret.classList.add('block');
@@ -567,17 +593,14 @@ export class Engine {
   // ============================================================
 
   _handleKeyDown(e) {
-    // Skip if modal open
     if (this._isModalOpen()) return;
     if (!this.isFocused) {
-      // Auto-focus on typing
       if (e.key.length === 1 || e.key === 'Backspace') {
         this.focus();
       }
       return;
     }
 
-    // Ignore modifier-only
     if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
 
     // Zen mode: Shift+Enter finishes
@@ -608,9 +631,8 @@ export class Engine {
       return;
     }
 
-    // Printable characters (single char)
+    // Printable characters
     if (e.key.length === 1) {
-      // Respect Ctrl/Meta for shortcuts
       if (e.ctrlKey || e.metaKey) return;
       e.preventDefault();
       this._handleChar(e.key);
@@ -644,7 +666,6 @@ export class Engine {
     const expected = transformedWord[this.letterIndex];
     const isCorrect = char === expected;
 
-    // Log replay
     this.replayLog.push({
       t: Math.round(performance.now() - this.startTime),
       c: char,
@@ -654,10 +675,8 @@ export class Engine {
       l: this.letterIndex,
     });
 
-    // Play sound
     this.sound?.play?.(isCorrect ? 'key' : 'error');
 
-    // MASTER: fail on first wrong key
     if (this.settings.difficulty === DIFFICULTY.MASTER && !isCorrect) {
       this._flashError();
       this._finish();
@@ -666,7 +685,6 @@ export class Engine {
 
     this.totalKeystrokes++;
 
-    // STOP ON ERROR: letter
     if (this.settings.stopOnError === STOP_ON_ERROR.LETTER && !isCorrect) {
       this.incorrectKeystrokes++;
       this._flashError();
@@ -675,7 +693,6 @@ export class Engine {
       return;
     }
 
-    // Append typed char
     if (!this.typed[this.wordIndex]) this.typed[this.wordIndex] = '';
     this.typed[this.wordIndex] += char;
 
@@ -688,15 +705,8 @@ export class Engine {
       this._resetStreak();
     }
 
-    // Advance letter
-    if (this.letterIndex < transformedWord.length || !isCorrect || this.settings.stopOnError === STOP_ON_ERROR.OFF) {
-      this.letterIndex++;
-    } else {
-      // STOP ON ERROR: word mode allows advancing position but marks word incomplete
-      this.letterIndex++;
-    }
+    this.letterIndex++;
 
-    // Streak update
     if (isCorrect) {
       this.currentStreak++;
       if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
@@ -709,11 +719,8 @@ export class Engine {
     this._updateCaret();
     this._updateLiveStats();
 
-    // Auto-complete: if in words mode and last word finished
     if (this.state.mode === 'words' && this.wordIndex === this.words.length - 1) {
       if (this.letterIndex >= transformedWord.length) {
-        // Don't auto-finish — user must press space (unless no more words)
-        // Actually Monkeytype finishes when the last word is complete
         this._finish();
       }
     }
@@ -726,37 +733,31 @@ export class Engine {
     const transformedWord = this._transformWord(currentWord);
     const typedWord = this.typed[this.wordIndex] || '';
 
-    // EXPERT: fail if word wrong
     if (this.settings.difficulty === DIFFICULTY.EXPERT && typedWord !== transformedWord) {
       this._flashError();
       this._finish();
       return;
     }
 
-    // STOP ON ERROR: word mode — don't advance if not matching
     if (this.settings.stopOnError === STOP_ON_ERROR.WORD && typedWord !== transformedWord) {
       this._flashError();
       this._resetStreak();
       return;
     }
 
-    // Count missed chars
     if (typedWord.length < transformedWord.length) {
       this.missedKeystrokes += transformedWord.length - typedWord.length;
     }
 
-    // Mark word complete
-    const wordEl = this.dom.words.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
+    const wordEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
     if (wordEl) {
       wordEl.classList.add('completed');
       setTimeout(() => wordEl.classList.remove('completed'), 400);
     }
 
-    // Advance word
     this.wordIndex++;
     this.letterIndex = 0;
 
-    // End of words?
     if (this.wordIndex >= this.words.length) {
       this._finish();
       return;
@@ -767,27 +768,20 @@ export class Engine {
   }
 
   _handleBackspace(isWordDelete) {
-    // Freedom mode: allow backspacing into previous correct words
-    const currentWord = this.words[this.wordIndex];
-    const transformedWord = this._transformWord(currentWord || '');
-
     if (this.letterIndex === 0 && this.wordIndex === 0) return;
 
     if (isWordDelete) {
-      // Clear entire current word
       this.typed[this.wordIndex] = '';
       this.letterIndex = 0;
     } else if (this.letterIndex > 0) {
-      // Delete one char
       const cur = this.typed[this.wordIndex] || '';
       this.typed[this.wordIndex] = cur.slice(0, -1);
       this.letterIndex--;
     } else {
-      // At start of word — jump to previous word
       if (!this.settings.freedomMode) {
         const prevTyped = this.typed[this.wordIndex - 1] || '';
         const prevWord = this._transformWord(this.words[this.wordIndex - 1] || '');
-        if (prevTyped === prevWord) return; // Can't go past correct word
+        if (prevTyped === prevWord) return;
       }
       this.wordIndex--;
       const prevTyped = this.typed[this.wordIndex] || '';
@@ -809,10 +803,8 @@ export class Engine {
 
     update('isTyping', true);
 
-    // Track tests started
     try { incrementTestsStarted(); } catch (e) { /* ignore */ }
 
-    // Emit first tick
     if (this.onTick) this.onTick({ time: 0, wpm: 0, acc: 100 });
 
     this._startTick();
@@ -832,10 +824,8 @@ export class Engine {
     update('isTyping', false);
     update('isFinished', true);
 
-    // Compute final stats
     const stats = this._computeFinalStats();
 
-    // Save + callback
     if (this.onFinish) {
       this.onFinish(stats);
     }
@@ -854,7 +844,6 @@ export class Engine {
 
     const consistency = this.stats?.calculateConsistency?.() ?? 100;
 
-    // Character breakdown
     let correctChars = 0;
     let incorrectChars = 0;
     let extraChars = 0;
@@ -873,17 +862,13 @@ export class Engine {
       }
 
       if (typed.length < transformed.length) {
-        // Missed characters only count if the test has ended or word was submitted
         if (wi < this.wordIndex || this.isFinished) {
           missedChars += transformed.length - typed.length;
         }
       }
     }
 
-    // Chart data — from stats engine's tick history
     const chartData = this.stats?.getChartData?.() || [];
-
-    // PB detection — compare against stored best for this mode
     const isPB = this.stats?.isPersonalBest?.(wpm) ?? false;
 
     return {
@@ -938,10 +923,8 @@ export class Engine {
     const now = performance.now();
     this.elapsed = (now - this.startTime) / 1000;
 
-    // Update live stats
     this._updateLiveStats();
 
-    // Record per-second data
     const secondsMark = Math.floor(this.elapsed);
     const lastSecond = this.stats?.lastSecond ?? -1;
     if (secondsMark > lastSecond) {
@@ -954,7 +937,6 @@ export class Engine {
       });
     }
 
-    // Emit tick
     if (this.onTick) {
       this.onTick({
         time: this.elapsed,
@@ -963,7 +945,6 @@ export class Engine {
       });
     }
 
-    // Time mode: check limit
     if (this.state.mode === 'time' && this.elapsed >= this.state.timeLimit) {
       this._finish();
     }
@@ -1015,7 +996,7 @@ export class Engine {
   // ============================================================
 
   _pulseLetter() {
-    const wordEl = this.dom.words.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
+    const wordEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
     if (!wordEl) return;
     const letterEl = wordEl.querySelector(`.letter[data-letter-index="${this.letterIndex - 1}"]`);
     if (!letterEl) return;
@@ -1024,7 +1005,7 @@ export class Engine {
   }
 
   _markLetterIncorrect() {
-    const wordEl = this.dom.words.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
+    const wordEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
     if (!wordEl) return;
     const letterEl = wordEl.querySelector(`.letter[data-letter-index="${this.letterIndex}"]`);
     if (letterEl) letterEl.classList.add('incorrect');
