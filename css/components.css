@@ -1487,3 +1487,20 @@ html[data-reduce-motion="true"] .theme-swatch:hover {
   text-align: center;
   justify-content: center;
 }
+
+
+/* ============================================================
+   CONFIG BAR — LOCKED (during active test)
+   ============================================================ */
+
+.config-bar--locked {
+  opacity: 0.55;
+  pointer-events: none;
+  filter: saturate(0.6);
+  transition: opacity var(--duration-base) var(--ease-out),
+              filter var(--duration-base) var(--ease-out);
+}
+
+.config-bar--locked button {
+  cursor: not-allowed;
+}
