@@ -239,6 +239,9 @@ export class Router {
     // Only move focus for keyboard users
     const lastInteraction = this._lastInteraction || 'keyboard';
     if (lastInteraction === 'keyboard') {
+      // Use -1 to make it programmatically focusable without
+      // stealing tabIndex from children like #typingContainer.
+      // Also restore tabIndex on any element that had it stripped.
       main.setAttribute('tabindex', '-1');
       main.focus({ preventScroll: true });
     }
