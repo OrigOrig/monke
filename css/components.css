@@ -780,6 +780,28 @@
 .setting-control .config-btn {
   padding: var(--space-2xs) var(--space-sm);
   font-size: var(--text-xs);
+  border: 1px solid transparent;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.setting-control .config-btn:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.setting-control .config-btn.active {
+  background-color: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.setting-control .config-btn.active:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 /* ============================================================
