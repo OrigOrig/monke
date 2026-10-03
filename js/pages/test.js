@@ -409,8 +409,21 @@ export class TestPage {
   }
 
   hideResults() {
+    // Hide modal
     this.dom.resultsOverlay?.setAttribute('hidden', '');
-    this.engine.focus();
+
+    // Force-focus the typing container on the next frame.
+    // Without the rAF, the browser is still processing the click
+    // event and steals focus back to document.body.
+    requestAnimationFrame(() => {
+      this.engine.focus();
+      // If the engine's focus didn't stick, try again on next tick
+      setTimeout(() => {
+        if (document.activeElement === document.body) {
+          this.engine.focus();
+        }
+      }, 50);
+    });
   }
 
   _practiceWeakWords() {
