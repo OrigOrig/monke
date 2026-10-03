@@ -591,6 +591,17 @@ html[data-reduce-motion="true"] .stat-card:hover {
   gap: var(--space-sm);
   justify-content: center;
   padding-top: var(--space-md);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.results-actions .btn {
+  min-width: 120px;
+}
+
+/* Keep the two primary actions visually grouped at the end */
+.results-actions .btn--primary {
+  min-width: 140px;
 }
 
 @media (max-width: 640px) {
