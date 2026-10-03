@@ -190,8 +190,8 @@ export class Practice {
    * figure out which words were fully wrong.
    */
   _collectMissed(result, mode) {
-    const words = result.words || [];
-    const typed = result.typed || [];
+    const words = result.rawWords || [];
+    const typed = result.rawTyped || [];
     const missed = [];
     const biwords = [];
 
@@ -232,7 +232,7 @@ export class Practice {
    * Falls back to nothing if the data isn't there.
    */
   _collectSlow(result) {
-    const words = result.words || [];
+    const words = result.rawWords || [];
     const timestamps = result.wordTimestamps || [];
 
     if (timestamps.length < 3 || words.length < 3) return [];
