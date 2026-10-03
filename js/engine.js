@@ -968,7 +968,7 @@ export class Engine {
     update('isTyping', false);
     update('isFinished', true);
 
-    const stats = this.();
+    const stats = this._computeFinalStats();
 
     if (this.onFinish) this.onFinish(stats);
   }
