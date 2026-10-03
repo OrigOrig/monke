@@ -1,14 +1,17 @@
-
 /* ============================================================
    TYPE FLOW — pages/test.js
-   Test page controller. Config bar, mode/submode buttons,
-   toggles, results modal, focus overlay, live stat sync.
+   Test page controller. Fixes:
+     - Bug 3: results as full-page view (not modal)
+     - Bug 7: custom text modal wired to engine
+     - Live stat skeleton → number transitions
+     - Config bar wiring (mode/submode/toggles)
+     - Settings drawer wiring
    ============================================================ */
 
 import { getState, update, subscribe } from '../state.js';
 
 // ============================================================
-// 1. CONSTANTS
+// CONSTANTS
 // ============================================================
 
 const SUB_MODE_OPTIONS = {
@@ -20,7 +23,7 @@ const SUB_MODE_OPTIONS = {
 };
 
 // ============================================================
-// 2. TEST PAGE CLASS
+// TEST PAGE CLASS
 // ============================================================
 
 export class TestPage {
@@ -36,22 +39,18 @@ export class TestPage {
     this.update = update;
 
     this.isMounted = false;
-
-    // DOM cache
     this.dom = {};
-
-    // Unsubscribe functions
     this._unsubs = [];
+    this._lastResult = null;
 
-    // Bound handlers
     this._handleModeClick = this._handleModeClick.bind(this);
     this._handleSubModeClick = this._handleSubModeClick.bind(this);
     this._handleToggleClick = this._handleToggleClick.bind(this);
-    this._handleKeydown = this._handleKeydown.bind(this);
+    this._handleResultsKeydown = this._handleResultsKeydown.bind(this);
   }
 
   // ============================================================
-  // 3. LIFECYCLE
+  // LIFECYCLE
   // ============================================================
 
   mount() {
@@ -62,7 +61,6 @@ export class TestPage {
     this._attachListeners();
     this._subscribeToState();
 
-    // Initial render
     this.renderSubModes();
     this.renderToggles();
     this.renderLiveStatsSkeleton();
@@ -79,13 +77,12 @@ export class TestPage {
   }
 
   render() {
-    // Called by router on enter
     this.mount();
     this.updateConfigUI();
   }
 
   // ============================================================
-  // 4. DOM CACHE
+  // DOM CACHE
   // ============================================================
 
   _cacheDOM() {
@@ -96,10 +93,9 @@ export class TestPage {
     this.dom.liveTime = document.getElementById('liveTime');
     this.dom.liveWpm = document.getElementById('liveWpm');
     this.dom.liveAcc = document.getElementById('liveAcc');
-    this.dom.liveStats = document.getElementById('liveStats');
-    this.dom.focusOverlay = document.getElementById('focusOverlay');
-    this.dom.typingContainer = document.getElementById('typingContainer');
-    this.dom.resultsOverlay = document.getElementById('resultsOverlay');
+
+    // Results full-page
+    this.dom.resultsPage = document.getElementById('resultsPage');
     this.dom.resultWpm = document.getElementById('resultWpm');
     this.dom.resultAcc = document.getElementById('resultAcc');
     this.dom.resultRaw = document.getElementById('resultRaw');
@@ -107,60 +103,54 @@ export class TestPage {
     this.dom.resultChars = document.getElementById('resultChars');
     this.dom.resultTime = document.getElementById('resultTime');
     this.dom.wpmChart = document.getElementById('wpmChart');
-    this.dom.restartBtn = document.getElementById('restartBtn');
-    this.dom.nextTestBtn = document.getElementById('nextTestBtn');
-    this.dom.closeResultsBtn = document.getElementById('closeResultsBtn');
-    this.dom.screenshotBtn = document.getElementById('screenshotBtn');
+    this.dom.restartBtn = document.getElementById('resultRestartBtn');
+    this.dom.nextTestBtn = document.getElementById('resultNextBtn');
+    this.dom.repeatBtn = document.getElementById('resultRepeatBtn');
+    this.dom.practiceBtn = document.getElementById('resultPracticeBtn');
+    this.dom.screenshotBtn = document.getElementById('resultScreenshotBtn');
   }
 
   // ============================================================
-  // 5. LISTENERS
+  // LISTENERS
   // ============================================================
 
   _attachListeners() {
-    // Mode buttons (delegation)
     this.dom.modeGroup?.addEventListener('click', this._handleModeClick);
-
-    // Sub-mode buttons (delegation, re-rendered)
     this.dom.subModeGroup?.addEventListener('click', this._handleSubModeClick);
-
-    // Toggle buttons
     this.dom.punctuationBtn?.addEventListener('click', this._handleToggleClick);
     this.dom.numbersBtn?.addEventListener('click', this._handleToggleClick);
 
-    // Results modal buttons
+    // Results actions
     this.dom.restartBtn?.addEventListener('click', () => {
-      this.closeResults();
+      this.hideResults();
       this.engine.restart();
     });
 
     this.dom.nextTestBtn?.addEventListener('click', () => {
-      this.closeResults();
+      this.hideResults();
       this.engine.restart({ reroll: true });
     });
 
-    this.dom.closeResultsBtn?.addEventListener('click', () => {
-      this.closeResults();
+    this.dom.repeatBtn?.addEventListener('click', () => {
+      this.hideResults();
+      this.engine.restart({ reroll: false });
+    });
+
+    this.dom.practiceBtn?.addEventListener('click', () => {
+      this._practiceWeakWords();
     });
 
     this.dom.screenshotBtn?.addEventListener('click', async () => {
-      const result = this._lastResult;
-      if (!result || !this.screenshot) return;
-      const blob = await this.screenshot.captureResults(result);
+      if (!this._lastResult || !this.screenshot) return;
+      const blob = await this.screenshot.captureResults(this._lastResult);
       if (blob) {
         const copied = await this.screenshot.copyToClipboard(blob);
-        if (copied) this._flashButton(this.dom.screenshotBtn, 'copied!');
-        else this._flashButton(this.dom.screenshotBtn, 'downloaded');
+        this._flashButton(this.dom.screenshotBtn, copied ? 'copied!' : 'downloaded');
       }
     });
 
-    // Focus overlay
-    this.dom.focusOverlay?.addEventListener('click', () => {
-      this.engine.focus();
-    });
-
-    // Quick restart via keydown handled by engine; extra guard here
-    document.addEventListener('keydown', this._handleKeydown);
+    // Keyboard shortcuts while results are showing
+    document.addEventListener('keydown', this._handleResultsKeydown);
   }
 
   _detachListeners() {
@@ -168,15 +158,27 @@ export class TestPage {
     this.dom.subModeGroup?.removeEventListener('click', this._handleSubModeClick);
     this.dom.punctuationBtn?.removeEventListener('click', this._handleToggleClick);
     this.dom.numbersBtn?.removeEventListener('click', this._handleToggleClick);
-    document.removeEventListener('keydown', this._handleKeydown);
+    document.removeEventListener('keydown', this._handleResultsKeydown);
+  }
+
+  _handleResultsKeydown(e) {
+    if (!this.dom.resultsPage || this.dom.resultsPage.hasAttribute('hidden')) return;
+    if (e.key === 'Tab' || e.key === 'Enter') {
+      e.preventDefault();
+      this.hideResults();
+      this.engine.restart({ reroll: true });
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      this.hideResults();
+      this.engine.focus();
+    }
   }
 
   // ============================================================
-  // 6. STATE SUBSCRIPTIONS
+  // STATE SUBSCRIPTIONS
   // ============================================================
 
   _subscribeToState() {
-    // Re-render submode buttons when mode changes
     this._unsubs.push(
       subscribe('change:mode', () => {
         this.renderSubModes();
@@ -184,38 +186,26 @@ export class TestPage {
       })
     );
 
-    // Update submode active states
     this._unsubs.push(
       subscribe('change:timeLimit', () => this.updateSubModeActive()),
       subscribe('change:wordLimit', () => this.updateSubModeActive()),
       subscribe('change:quoteLength', () => this.updateSubModeActive())
     );
 
-    // Update toggles
     this._unsubs.push(
       subscribe('change:punctuation', () => this.renderToggles()),
       subscribe('change:numbers', () => this.renderToggles())
     );
 
-    // Live stats when test starts
     this._unsubs.push(
       subscribe('change:isTyping', ({ value }) => {
-        if (value) {
-          this._markStatsLive();
-        }
-      })
-    );
-
-    // When test finishes → show results
-    this._unsubs.push(
-      subscribe('engine:finish', (result) => {
-        this._lastResult = result;
+        if (value) this._markStatsLive();
       })
     );
   }
 
   // ============================================================
-  // 7. MODE BUTTONS
+  // MODE BUTTONS
   // ============================================================
 
   _handleModeClick(e) {
@@ -241,7 +231,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 8. SUB-MODE BUTTONS
+  // SUB-MODE BUTTONS
   // ============================================================
 
   renderSubModes() {
@@ -254,7 +244,6 @@ export class TestPage {
     group.innerHTML = '';
 
     if (options.length === 0) {
-      // Zen / custom: show a hint instead
       const hint = document.createElement('span');
       hint.className = 'config-btn';
       hint.style.cursor = 'default';
@@ -332,7 +321,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 9. TOGGLES (punctuation / numbers)
+  // TOGGLES
   // ============================================================
 
   _handleToggleClick(e) {
@@ -347,7 +336,6 @@ export class TestPage {
     btn.setAttribute('aria-pressed', next ? 'true' : 'false');
     this._pulseButton(btn);
 
-    // Restart test with new word set
     this.engine.restart({ reroll: true });
   }
 
@@ -364,7 +352,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 10. CONFIG UI SYNC
+  // CONFIG UI SYNC
   // ============================================================
 
   updateConfigUI() {
@@ -374,7 +362,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 11. LIVE STATS
+  // LIVE STATS
   // ============================================================
 
   renderLiveStatsSkeleton() {
@@ -392,39 +380,42 @@ export class TestPage {
   }
 
   // ============================================================
-  // 12. RESULTS MODAL
+  // RESULTS (full-page view, not modal)
   // ============================================================
 
   showResults(result) {
     if (!result) return;
     this._lastResult = result;
 
+    // Hide typing test, show results
+    this.dom.resultsPage?.removeAttribute('hidden');
+
     // Populate values
     if (this.dom.resultWpm) this.dom.resultWpm.textContent = '0';
     if (this.dom.resultAcc) this.dom.resultAcc.textContent = '0%';
     if (this.dom.resultRaw) this.dom.resultRaw.textContent = String(result.raw ?? 0);
-    if (this.dom.resultConsistency) this.dom.resultConsistency.textContent = `${result.consistency ?? 100}%`;
+    if (this.dom.resultConsistency) {
+      this.dom.resultConsistency.textContent = `${result.consistency ?? 100}%`;
+    }
 
     if (this.dom.resultChars) {
       const c = result.chars || {};
-      this.dom.resultChars.textContent = `${c.correct ?? 0} / ${c.incorrect ?? 0} / ${c.extra ?? 0} / ${c.missed ?? 0}`;
+      this.dom.resultChars.textContent =
+        `${c.correct ?? 0} / ${c.incorrect ?? 0} / ${c.extra ?? 0} / ${c.missed ?? 0}`;
     }
 
     if (this.dom.resultTime) {
       this.dom.resultTime.textContent = `${Math.round(result.time || 0)}s`;
     }
 
-    // Show modal
-    this.dom.resultsOverlay?.removeAttribute('hidden');
-
-    // Animate count-up
+    // Count-up animations
     this._animateCountUp(this.dom.resultWpm, 0, result.wpm || 0, 700, '');
     this._animateCountUp(this.dom.resultAcc, 0, result.acc || 0, 700, '%');
 
-    // Draw chart
+    // Chart
     this._drawChart(result.chartData || []);
 
-    // Confetti + PB badge
+    // Effects
     if (result.isPB) {
       this._spawnConfetti();
       this._spawnPBBadge();
@@ -432,11 +423,38 @@ export class TestPage {
 
     // Finish sound
     this.sound?.play?.('finish');
+
+    // Scroll to top so results are visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  closeResults() {
-    this.dom.resultsOverlay?.setAttribute('hidden', '');
+  hideResults() {
+    this.dom.resultsPage?.setAttribute('hidden', '');
     this.engine.focus();
+  }
+
+  _practiceWeakWords() {
+    // Collect words from the last test that were typed incorrectly
+    const log = this._lastResult?.replayLog || [];
+    const weak = new Set();
+
+    for (const entry of log) {
+      if (!entry.ok && entry.e) weak.add(entry.e);
+    }
+
+    if (weak.size === 0) {
+      this._flashButton(this.dom.practiceBtn, 'no errors!');
+      return;
+    }
+
+    const words = [...weak].join(' ');
+    update('mode', 'custom');
+    update('customText', { text: words, options: { mode: 'simple', delimiter: 'space' } });
+
+    this.hideResults();
+    setTimeout(() => {
+      this.engine.loadCustomText(words, { mode: 'simple', delimiter: 'space' });
+    }, 100);
   }
 
   _animateCountUp(el, from, to, duration = 600, suffix = '') {
@@ -454,7 +472,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 13. CHART
+  // CHART
   // ============================================================
 
   _drawChart(data) {
@@ -478,8 +496,12 @@ export class TestPage {
     const x = (t) => pad.left + (t / maxTime) * chartW;
     const y = (v) => pad.top + chartH - (v / maxWpm) * chartH;
 
-    const wpmPath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`).join(' ');
-    const rawPath = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`).join(' ');
+    const wpmPath = data
+      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`)
+      .join(' ');
+    const rawPath = data
+      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`)
+      .join(' ');
 
     const errorMarkers = data
       .filter((d) => d.errors > 0)
@@ -489,8 +511,10 @@ export class TestPage {
     const gridLines = Array.from({ length: 5 }, (_, i) => {
       const gy = pad.top + (i / 4) * chartH;
       const val = Math.round(maxWpm * (1 - i / 4));
-      return `<line x1="${pad.left}" y1="${gy}" x2="${W - pad.right}" y2="${gy}" stroke="var(--border)" stroke-dasharray="4" />`
-        + `<text x="${pad.left - 6}" y="${gy + 3}" text-anchor="end" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">${val}</text>`;
+      return (
+        `<line x1="${pad.left}" y1="${gy}" x2="${W - pad.right}" y2="${gy}" stroke="var(--border)" stroke-dasharray="4" />` +
+        `<text x="${pad.left - 6}" y="${gy + 3}" text-anchor="end" fill="var(--text-muted)" font-size="9" font-family="var(--font-mono)">${val}</text>`
+      );
     }).join('');
 
     svg.innerHTML = `
@@ -502,7 +526,7 @@ export class TestPage {
   }
 
   // ============================================================
-  // 14. EFFECTS
+  // EFFECTS
   // ============================================================
 
   _spawnConfetti() {
@@ -530,10 +554,9 @@ export class TestPage {
   }
 
   _spawnPBBadge() {
-    const modal = this.dom.resultsOverlay?.querySelector('.modal--results');
-    if (!modal) return;
+    if (!this.dom.resultsPage) return;
 
-    const existing = modal.querySelector('.pb-badge');
+    const existing = this.dom.resultsPage.querySelector('.pb-badge');
     if (existing) existing.remove();
 
     const badge = document.createElement('div');
@@ -542,51 +565,35 @@ export class TestPage {
     badge.style.position = 'absolute';
     badge.style.top = 'var(--space-lg)';
     badge.style.right = 'var(--space-lg)';
-    modal.style.position = 'relative';
-    modal.appendChild(badge);
+
+    const hero = this.dom.resultsPage.querySelector('.results-hero') || this.dom.resultsPage;
+    hero.style.position = 'relative';
+    hero.appendChild(badge);
 
     setTimeout(() => badge.remove(), 5000);
   }
 
   // ============================================================
-  // 15. INTERACTION FEEDBACK
+  // BUTTON FEEDBACK
   // ============================================================
 
   _pulseButton(btn) {
-    btn?.classList.add('pressed');
+    if (!btn) return;
+    btn.classList.add('pressed');
     setTimeout(() => btn?.classList.remove('pressed'), 120);
   }
 
   _flashButton(btn, message) {
     if (!btn) return;
-    const original = btn.querySelector('span')?.textContent || '';
     const label = btn.querySelector('span');
-    if (label) {
-      label.textContent = message;
-      setTimeout(() => { label.textContent = original; }, 1500);
-    }
+    if (!label) return;
+    const original = label.textContent;
+    label.textContent = message;
+    setTimeout(() => { label.textContent = original; }, 1500);
   }
 
   // ============================================================
-  // 16. KEYBOARD HANDLERS
-  // ============================================================
-
-  _handleKeydown(e) {
-    // Skip if modal open (engine handles its own keys)
-    if (
-      !document.getElementById('resultsOverlay')?.hasAttribute('hidden') ||
-      !document.getElementById('commandOverlay')?.hasAttribute('hidden') ||
-      !document.getElementById('settingsDrawer')?.hasAttribute('hidden') ||
-      !document.getElementById('customTextOverlay')?.hasAttribute('hidden')
-    ) return;
-
-    // Enter on results → next test (engine handles during typing)
-    // Shift + Enter → manually finish zen mode (engine handles too)
-    // Nothing extra needed here for now
-  }
-
-  // ============================================================
-  // 17. GETTER
+  // GETTER
   // ============================================================
 
   getLastResult() {
