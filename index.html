@@ -532,9 +532,16 @@
           <span class="result-item__label">consistency</span>
           <span class="result-item__value" id="resultConsistency">—</span>
         </div>
-        <div class="result-item" title="correct / incorrect / extra / missed / wrong-words">
+        <div class="result-item has-tooltip">
           <span class="result-item__label">characters / wrong words</span>
           <span class="result-item__value" id="resultChars">— / — / — / — / —</span>
+          <div class="tooltip" role="tooltip">
+            <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--correct"></span><span class="tooltip__label">correct</span></div>
+            <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--incorrect"></span><span class="tooltip__label">incorrect</span></div>
+            <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--extra"></span><span class="tooltip__label">extra</span></div>
+            <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--missed"></span><span class="tooltip__label">missed</span></div>
+            <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--wrong"></span><span class="tooltip__label">wrong words</span></div>
+          </div>
         </div>
         <div class="result-item">
           <span class="result-item__label">time</span>
