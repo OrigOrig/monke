@@ -755,51 +755,6 @@ export class Engine {
     }
   }
 
-    // Ignore modifier-only keys
-    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
-
-    // Auto-focus on first keypress
-    if (!this.isFocused) {
-      this.focus();
-      // Fall through so the character registers
-    }
-
-    // Zen mode finish
-    if (this.state.mode === 'zen' && e.shiftKey && e.key === 'Enter') {
-      e.preventDefault();
-      this._finish();
-      return;
-    }
-
-    // Auto-start on first keystroke
-    if (!this.isActive && !this.isFinished) {
-      this._start();
-    }
-
-    if (this.isFinished) return;
-
-    // Backspace
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      this._handleBackspace(e.ctrlKey || e.metaKey || e.altKey);
-      return;
-    }
-
-    // Space
-    if (e.key === ' ') {
-      e.preventDefault();
-      this._handleSpace();
-      return;
-    }
-
-    // Printable characters
-    if (e.key.length === 1) {
-      if (e.ctrlKey || e.metaKey) return;
-      e.preventDefault();
-      this._handleChar(e.key);
-    }
-  }
-
   _handleMobileInput(e) {
     const val = e.target.value;
     if (!val) return;
