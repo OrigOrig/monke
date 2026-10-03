@@ -564,14 +564,20 @@ export class Engine {
     const activeWord = wrap?.querySelector('.word.active');
     if (!wrap || !activeWord) return;
 
-    const wrapRect = wrap.parentElement.getBoundingClientRect();
+    const container = wrap.parentElement;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
     const activeRect = activeWord.getBoundingClientRect();
-    const lineTop = activeRect.top - wrapRect.top;
     const lineHeight = this.lineHeight || activeRect.height + 8;
 
-    // Target: active word should be on line 2 (index 1)
+    // Active word's top edge relative to container's visible top,
+    // accounting for the current translateY offset
+    const activeTopInContainer = (activeRect.top - containerRect.top) + this.visibleLineOffset;
+
+    // Desired: active word sits at line 2 (index 1) of the visible window
     const targetLine = 1;
-    const currentLine = Math.round((lineTop + this.visibleLineOffset) / lineHeight);
+    const currentLine = Math.max(0, Math.round(activeTopInContainer / lineHeight));
     const desiredOffset = Math.max(0, (currentLine - targetLine) * lineHeight);
 
     if (Math.abs(desiredOffset - this.visibleLineOffset) > 1) {
