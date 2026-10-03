@@ -400,8 +400,10 @@ export class TestPage {
 
     if (this.dom.resultChars) {
       const c = result.chars || {};
+      const w = result.words || {};
+      // Show: correct / incorrect / extra / missed / wrong-words
       this.dom.resultChars.textContent =
-        `${c.correct ?? 0} / ${c.incorrect ?? 0} / ${c.extra ?? 0} / ${c.missed ?? 0}`;
+        `${c.correct ?? 0} / ${c.incorrect ?? 0} / ${c.extra ?? 0} / ${c.missed ?? 0} / ${w.wrong ?? 0}`;
     }
 
     if (this.dom.resultTime) {
