@@ -1039,6 +1039,9 @@ export class Engine {
       isPB,
       bestStreak: this.bestStreak,
       replayLog: this.replayLog,
+      // New: raw word arrays for practice / history
+      words: this.words.slice(),
+      typed: this.typed.slice(),
       timestamp: Date.now(),
     };
   }
