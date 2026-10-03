@@ -454,7 +454,7 @@ export class TestPage {
 
     // Chart
     this._drawChart(result.chartData || []);
-
+    this._mountChartLegend();
     // Effects
     if (result.isPB) {
       this._spawnConfetti();
@@ -509,6 +509,9 @@ export class TestPage {
       return;
     }
 
+    // Read which series are enabled
+    const visible = this._getChartVisibility();
+
     const W = 600;
     const H = 200;
     const pad = { top: 20, right: 20, bottom: 28, left: 36 };
@@ -521,7 +524,7 @@ export class TestPage {
     const x = (t) => pad.left + (t / maxTime) * chartW;
     const y = (v) => pad.top + chartH - (v / maxWpm) * chartH;
 
-    // Compute burst (best wpm over last 3 samples)
+    // Burst = best wpm in last 3 samples
     const burstData = data.map((d, i) => {
       const window = data.slice(Math.max(0, i - 2), i + 1);
       const best = Math.max(...window.map((w) => w.wpm));
@@ -531,21 +534,7 @@ export class TestPage {
     const maxBurst = Math.max(...burstData.map((d) => d.burst), 10);
     const yBurst = (v) => pad.top + chartH - (v / maxBurst) * chartH;
 
-    const wpmPath = data
-      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`)
-      .join(' ');
-    const rawPath = data
-      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`)
-      .join(' ');
-    const burstPath = burstData
-      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${yBurst(d.burst)}`)
-      .join(' ');
-
-    const errorMarkers = data
-      .filter((d) => d.errors > 0)
-      .map((d) => `<circle cx="${x(d.time)}" cy="${y(d.wpm)}" r="3" fill="var(--error)" />`)
-      .join('');
-
+    // Grid lines
     const gridLines = Array.from({ length: 5 }, (_, i) => {
       const gy = pad.top + (i / 4) * chartH;
       const val = Math.round(maxWpm * (1 - i / 4));
@@ -555,35 +544,86 @@ export class TestPage {
       );
     }).join('');
 
-    svg.innerHTML = `
-      ${gridLines}
-      <path d="${rawPath}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linejoin="round" />
-      <path d="${burstPath}" fill="none" stroke="var(--accent-hover)" stroke-width="1.5" stroke-dasharray="6 4" stroke-linejoin="round" />
-      <path d="${wpmPath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" />
-      ${errorMarkers}
-    `;
+    // Build paths conditionally
+    let paths = '';
 
-    // Attach hover handler
-    this._attachChartHover(data, { x, y, W, H, pad });
+    // Raw line (grey dashed)
+    if (visible.raw) {
+      const rawPath = data
+        .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`)
+        .join(' ');
+      paths += `<path d="${rawPath}" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round" />`;
+    }
+
+    // Burst line (purple solid, thinner)
+    if (visible.burst) {
+      const burstPath = burstData
+        .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${yBurst(d.burst)}`)
+        .join(' ');
+      paths += `<path d="${burstPath}" fill="none" stroke="#7c6df0" stroke-width="1.5" stroke-linejoin="round" opacity="0.85" />`;
+    }
+
+    // WPM line (accent, primary)
+    const wpmPath = data
+      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`)
+      .join(' ');
+    paths += `<path d="${wpmPath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" />`;
+
+    // PB line (horizontal dashed marker)
+    if (visible.pb) {
+      const pb = this.stats?.getCurrentPB?.();
+      const pbWpm = pb?.wpm;
+      if (pbWpm && pbWpm > 0) {
+        const pbY = y(pbWpm);
+        paths += `<line x1="${pad.left}" y1="${pbY}" x2="${W - pad.right}" y2="${pbY}" stroke="var(--warning, #f59e0b)" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.75" />`;
+        paths += `<text x="${pad.left + 6}" y="${pbY - 4}" fill="var(--warning, #f59e0b)" font-size="9" font-family="var(--font-mono)">PB: ${pbWpm}</text>`;
+      }
+    }
+
+    // Error markers (red X)
+    if (visible.errors) {
+      const markers = data
+        .filter((d) => d.errors > 0)
+        .map((d) => {
+          const cx = x(d.time);
+          const cy = y(d.wpm);
+          return `<g stroke="var(--error)" stroke-width="1.5" stroke-linecap="round">
+            <line x1="${cx - 3}" y1="${cy - 3}" x2="${cx + 3}" y2="${cy + 3}" />
+            <line x1="${cx + 3}" y1="${cy - 3}" x2="${cx - 3}" y2="${cy + 3}" />
+          </g>`;
+        })
+        .join('');
+      paths += markers;
+    }
+
+    // Y-axis on the right for errors (only if enabled)
+    if (visible.errors) {
+      const maxErrors = Math.max(...data.map((d) => d.errors), 1);
+      const errorAxis = Array.from({ length: 4 }, (_, i) => {
+        const gy = pad.top + (i / 3) * chartH;
+        const val = Math.round(maxErrors * (1 - i / 3));
+        return `<text x="${W - pad.right + 6}" y="${gy + 3}" text-anchor="start" fill="var(--error)" font-size="9" font-family="var(--font-mono)" opacity="0.7">${val}</text>`;
+      }).join('');
+      paths += errorAxis;
+    }
+
+    svg.innerHTML = `${gridLines}${paths}`;
+
+    // Attach hover
+    this._attachChartHover(data, { x, y, W, H, pad, burstData, yBurst });
   }
 
-  /**
-   * Attach a hover handler that shows a floating tooltip with
-   * per-second stats: errors / wpm / raw / burst.
-   */
   _attachChartHover(data, scales) {
     const chartEl = this.dom.wpmChart?.parentElement;
     if (!chartEl) return;
 
-    // Remove any existing hover overlay
     chartEl.querySelector('.chart-hover')?.remove();
+    chartEl.querySelector('.tooltip--chart')?.remove();
 
-    // Create hover overlay
     const hover = document.createElement('div');
     hover.className = 'chart-hover';
     chartEl.appendChild(hover);
 
-    // Create vertical line + dot
     const line = document.createElement('div');
     line.className = 'chart-hover-line';
     hover.appendChild(line);
@@ -592,29 +632,24 @@ export class TestPage {
     dot.className = 'chart-hover-dot';
     hover.appendChild(dot);
 
-    // Create tooltip
     const tooltip = document.createElement('div');
     tooltip.className = 'tooltip tooltip--chart';
-    tooltip.innerHTML = '';
     chartEl.appendChild(tooltip);
 
-    const svgRect = this.dom.wpmChart.getBoundingClientRect();
+    const visible = this._getChartVisibility();
 
     const onMove = (e) => {
       const rect = chartEl.getBoundingClientRect();
       const mx = e.clientX - rect.left;
 
-      // Find nearest data point
       const W = scales.W;
       const pad = scales.pad;
       const chartW = W - pad.left - pad.right;
       const maxTime = data[data.length - 1].time;
 
-      // Convert mx (in CSS pixels of the chart container) to the SVG's viewBox coordinate space
       const svgScale = W / rect.width;
       const svgX = mx * svgScale;
 
-      // Find the closest time value
       const relX = (svgX - pad.left) / chartW;
       const targetTime = relX * maxTime;
 
@@ -628,14 +663,12 @@ export class TestPage {
         }
       }
 
-      // Compute burst
       const idx = data.indexOf(closest);
       const window = data.slice(Math.max(0, idx - 2), idx + 1);
       const burst = Math.max(...window.map((w) => w.wpm));
 
-      // Position line + dot (in CSS pixels)
-      const lineX = (scales.x(closest.time) / svgScale);
-      const dotY = (scales.y(closest.wpm) / svgScale);
+      const lineX = scales.x(closest.time) / svgScale;
+      const dotY = scales.y(closest.wpm) / svgScale;
 
       line.style.left = `${lineX}px`;
       line.style.opacity = '1';
@@ -644,15 +677,22 @@ export class TestPage {
       dot.style.top = `${dotY + 12}px`;
       dot.style.opacity = '1';
 
-      // Populate tooltip
-      tooltip.innerHTML = `
-        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--incorrect"></span><span class="tooltip__label">errors: ${closest.errors}</span></div>
-        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--correct"></span><span class="tooltip__label">wpm: ${closest.wpm}</span></div>
-        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--extra"></span><span class="tooltip__label">raw: ${closest.raw}</span></div>
-        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--missed"></span><span class="tooltip__label">burst: ${burst}</span></div>
-      `;
+      // Build tooltip rows conditionally
+      let rows = `<div class="tooltip__row" style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">${closest.time}s</div>`;
 
-      // Position tooltip — above the line, follow the mouse
+      if (visible.errors) {
+        rows += `<div class="tooltip__row"><span class="tooltip__swatch" style="background:var(--error);"></span><span class="tooltip__label">errors: ${closest.errors}</span></div>`;
+      }
+      rows += `<div class="tooltip__row"><span class="tooltip__swatch" style="background:var(--accent);"></span><span class="tooltip__label">wpm: ${closest.wpm}</span></div>`;
+      if (visible.raw) {
+        rows += `<div class="tooltip__row"><span class="tooltip__swatch" style="background:var(--text-secondary);"></span><span class="tooltip__label">raw: ${closest.raw}</span></div>`;
+      }
+      if (visible.burst) {
+        rows += `<div class="tooltip__row"><span class="tooltip__swatch" style="background:#7c6df0;"></span><span class="tooltip__label">burst: ${burst}</span></div>`;
+      }
+
+      tooltip.innerHTML = rows;
+
       const tooltipX = Math.min(Math.max(lineX - 60, 0), rect.width - 140);
       tooltip.style.left = `${tooltipX}px`;
       tooltip.style.bottom = `calc(100% - ${dotY}px + 12px)`;
@@ -671,6 +711,66 @@ export class TestPage {
     hover.style.pointerEvents = 'auto';
     hover.addEventListener('mousemove', onMove);
     hover.addEventListener('mouseleave', onLeave);
+  }
+
+  /**
+   * Read which chart series are visible from localStorage.
+   * Defaults: raw=on, burst=on, errors=on, pb=on, scale=on.
+   */
+  _getChartVisibility() {
+    const defaults = { raw: true, burst: true, errors: true, pb: true, scale: true };
+    try {
+      const raw = localStorage.getItem('typeflow:chart-visibility');
+      if (!raw) return defaults;
+      return { ...defaults, ...JSON.parse(raw) };
+    } catch (err) {
+      return defaults;
+    }
+  }
+
+  /**
+   * Persist which chart series are visible.
+   */
+  _setChartVisibility(visibility) {
+    try {
+      localStorage.setItem('typeflow:chart-visibility', JSON.stringify(visibility));
+    } catch (err) { /* ignore */ }
+  }
+
+  /**
+   * Wire the legend buttons and re-draw the chart on toggle.
+   */
+  _mountChartLegend() {
+    const legend = document.getElementById('chartLegend');
+    if (!legend) return;
+
+    // Apply current active states
+    const visibility = this._getChartVisibility();
+    legend.querySelectorAll('.legend-btn').forEach((btn) => {
+      const series = btn.dataset.series;
+      const isOn = !!visibility[series];
+      btn.dataset.active = String(isOn);
+    });
+
+    // Remove any old listeners by cloning
+    const freshLegend = legend.cloneNode(true);
+    legend.parentNode.replaceChild(freshLegend, legend);
+
+    // Attach fresh listeners
+    freshLegend.querySelectorAll('.legend-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const series = btn.dataset.series;
+        const vis = this._getChartVisibility();
+        vis[series] = !vis[series];
+        this._setChartVisibility(vis);
+        btn.dataset.active = String(vis[series]);
+
+        // Redraw
+        if (this._lastResult?.chartData) {
+          this._drawChart(this._lastResult.chartData);
+        }
+      });
+    });
   }
    
   // ============================================================
