@@ -598,6 +598,57 @@
   </div>
 
   <!-- ============================================================
+       MODAL: PRACTICE WORDS
+       ============================================================ -->
+  <div class="modal-overlay" id="practiceOverlay" role="dialog" aria-modal="true" aria-labelledby="practiceTitle" hidden>
+    <div class="modal modal--practice">
+      <header class="modal__header">
+        <h2 class="modal__title" id="practiceTitle">practice words</h2>
+        <button class="icon-btn" id="closePracticeBtn" aria-label="Close practice modal">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="practice-body">
+
+        <!-- Missed words -->
+        <div class="practice-section">
+          <div class="practice-section__label">missed</div>
+          <p class="practice-section__description">
+            Include missed words or biwords (which include the previous word).
+          </p>
+          <div class="setting-control" data-practice-setting="missed">
+            <button type="button" class="config-btn active" data-value="off">off</button>
+            <button type="button" class="config-btn" data-value="words">words</button>
+            <button type="button" class="config-btn" data-value="biwords">biwords</button>
+          </div>
+        </div>
+
+        <!-- Slow words -->
+        <div class="practice-section">
+          <div class="practice-section__label">slow</div>
+          <p class="practice-section__description">
+            Include words which you typed slower than others.
+          </p>
+          <div class="setting-control" data-practice-setting="slow">
+            <button type="button" class="config-btn active" data-value="off">off</button>
+            <button type="button" class="config-btn" data-value="on">on</button>
+          </div>
+        </div>
+
+      </div>
+
+      <footer class="modal__footer">
+        <button class="btn btn--primary" id="startPracticeBtn">
+          <span>start</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================
        MODAL: CUSTOM TEXT
        ============================================================ -->
   <div class="modal-overlay" id="customTextOverlay" role="dialog" aria-modal="true" aria-labelledby="customTextTitle" hidden>
