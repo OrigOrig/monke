@@ -182,6 +182,14 @@ export class Engine {
 
   focus() {
     if (!this.dom.container) return;
+
+    // Ensure the container is programmatically focusable.
+    // Some browsers strip tabindex when an element's parent was
+    // hidden (like when the results modal opened). Restore it.
+    if (this.dom.container.tabIndex < 0) {
+      this.dom.container.setAttribute('tabindex', '0');
+    }
+
     this.dom.container.focus({ preventScroll: true });
     this.dom.mobileInput?.focus({ preventScroll: true });
     this.isFocused = true;
