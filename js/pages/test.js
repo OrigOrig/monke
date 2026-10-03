@@ -42,6 +42,23 @@ export class TestPage {
     this._handleModeClick = this._handleModeClick.bind(this);
     this._handleSubModeClick = this._handleSubModeClick.bind(this);
     this._handleToggleClick = this._handleToggleClick.bind(this);
+
+    this._practice = new Practice({
+      getLastResult: () => this._lastResult,
+      onStart: (words) => {
+        // Load as custom text and start fresh test
+        const text = words.join(' ');
+        update('mode', 'custom');
+        update('customText', {
+          text,
+          options: { mode: 'simple', delimiter: 'space' },
+        });
+        this.hideResults();
+        setTimeout(() => {
+          this.engine.loadCustomText(text, { mode: 'simple', delimiter: 'space' });
+        }, 80);
+      },
+    });
   }
 
   // ============================================================
@@ -55,6 +72,7 @@ export class TestPage {
     this._cacheDOM();
     this._attachListeners();
     this._subscribeToState();
+    this._practice.mount();
 
     this.renderSubModes();
     this.renderToggles();
@@ -134,7 +152,7 @@ export class TestPage {
     });
 
     this.dom.practiceBtn?.addEventListener('click', () => {
-      this._practiceWeakWords();
+      this._practice.open();
     });
 
     this.dom.screenshotBtn?.addEventListener('click', async () => {
@@ -425,29 +443,6 @@ export class TestPage {
         }
       }, 50);
     });
-  }
-
-  _practiceWeakWords() {
-    const log = this._lastResult?.replayLog || [];
-    const weak = new Set();
-
-    for (const entry of log) {
-      if (!entry.ok && entry.e) weak.add(entry.e);
-    }
-
-    if (weak.size === 0) {
-      this._flashButton(this.dom.practiceBtn, 'no errors!');
-      return;
-    }
-
-    const words = [...weak].join(' ');
-    update('mode', 'custom');
-    update('customText', { text: words, options: { mode: 'simple', delimiter: 'space' } });
-
-    this.hideResults();
-    setTimeout(() => {
-      this.engine.loadCustomText(words, { mode: 'simple', delimiter: 'space' });
-    }, 100);
   }
 
   _animateCountUp(el, from, to, duration = 600, suffix = '') {
