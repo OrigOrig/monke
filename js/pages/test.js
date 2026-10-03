@@ -134,6 +134,29 @@ export class TestPage {
     this.dom.punctuationBtn?.addEventListener('click', this._handleToggleClick);
     this.dom.numbersBtn?.addEventListener('click', this._handleToggleClick);
 
+    // Chart legend — event delegation on the container.
+    // Attached once here, works every time the modal opens.
+    const legend = document.getElementById('chartLegend');
+    if (legend && legend.dataset.wired !== 'true') {
+      legend.dataset.wired = 'true';
+      legend.addEventListener('click', (e) => {
+        const btn = e.target.closest('.legend-btn');
+        if (!btn) return;
+        const series = btn.dataset.series;
+        if (!series) return;
+
+        const vis = this._getChartVisibility();
+        vis[series] = !vis[series];
+        this._setChartVisibility(vis);
+
+        btn.dataset.active = String(vis[series]);
+
+        if (this._lastResult?.chartData) {
+          this._drawChart(this._lastResult.chartData);
+        }
+      });
+    }
+
     this.dom.closeResultsBtn?.addEventListener('click', () => this.hideResults());
 
     this.dom.restartBtn?.addEventListener('click', () => {
@@ -524,11 +547,20 @@ export class TestPage {
     const x = (t) => pad.left + (t / maxTime) * chartW;
     const y = (v) => pad.top + chartH - (v / maxWpm) * chartH;
 
-    // Burst = best wpm in last 3 samples
+    // Burst = best wpm over a rolling 3-second window.
+    // If the user stops typing (sample has 0 wpm), burst drops
+    // toward the current wpm at a decay rate.
     const burstData = data.map((d, i) => {
       const window = data.slice(Math.max(0, i - 2), i + 1);
-      const best = Math.max(...window.map((w) => w.wpm));
-      return { time: d.time, burst: best };
+      const windowMax = Math.max(...window.map((w) => w.wpm));
+
+      // If current wpm is 0 (user idle), decay burst toward 0
+      let burst = windowMax;
+      if (d.wpm === 0 && i > 0) {
+        const prev = burstData[i - 1]?.burst ?? 0;
+        burst = Math.max(0, prev * 0.6);
+      }
+      return { time: d.time, burst };
     });
 
     const maxBurst = Math.max(...burstData.map((d) => d.burst), 10);
@@ -750,32 +782,6 @@ export class TestPage {
       const series = btn.dataset.series;
       const isOn = !!visibility[series];
       btn.dataset.active = String(isOn);
-    });
-
-    // Attach one handler to the legend container (event delegation).
-    // Only attach once — mark with a data attribute.
-    if (legend.dataset.wired === 'true') return;
-    legend.dataset.wired = 'true';
-
-    legend.addEventListener('click', (e) => {
-      const btn = e.target.closest('.legend-btn');
-      if (!btn) return;
-
-      const series = btn.dataset.series;
-      if (!series) return;
-
-      // Toggle in localStorage
-      const vis = this._getChartVisibility();
-      vis[series] = !vis[series];
-      this._setChartVisibility(vis);
-
-      // Update button visual state
-      btn.dataset.active = String(vis[series]);
-
-      // Redraw the chart with new visibility
-      if (this._lastResult?.chartData) {
-        this._drawChart(this._lastResult.chartData);
-      }
     });
   }
    
