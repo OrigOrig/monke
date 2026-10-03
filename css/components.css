@@ -1632,3 +1632,86 @@ html[data-reduce-motion="true"] .theme-swatch:hover {
   opacity: 0;
   transition: opacity 100ms;
 }
+
+
+/* ============================================================
+   CHART LEGEND
+   ============================================================ */
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border);
+}
+
+.legend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast);
+  user-select: none;
+}
+
+.legend-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.legend-btn:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+/* Active (visible) state — full color */
+.legend-btn[data-active="true"] {
+  color: var(--text-primary);
+}
+
+.legend-btn[data-active="true"] svg {
+  color: var(--accent);
+}
+
+/* Inactive (hidden) state — muted, strikethrough */
+.legend-btn[data-active="false"] {
+  color: var(--text-dim);
+  opacity: 0.55;
+}
+
+.legend-btn[data-active="false"] span {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-dim);
+}
+
+.legend-btn[data-active="false"] svg {
+  color: var(--text-dim);
+}
+
+/* Distinct colors per series — set dynamically via JS inline styles */
+.legend-btn[data-series="raw"] svg     { color: var(--text-secondary); }
+.legend-btn[data-series="burst"] svg   { color: #7c6df0; }  /* purple */
+.legend-btn[data-series="errors"] svg  { color: var(--error); }
+.legend-btn[data-series="pb"] svg      { color: var(--warning, #f59e0b); }
+.legend-btn[data-series="scale"] svg   { color: var(--text-secondary); }
+
+/* When active, override the muted color */
+.legend-btn[data-active="false"] svg {
+  color: var(--text-dim) !important;
+}
