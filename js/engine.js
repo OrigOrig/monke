@@ -952,6 +952,9 @@ export class Engine {
     this.isActive = true;
     this.startTime = performance.now();
 
+    // Reset per-second error snapshot
+    this._lastErrorSnapshot = 0;
+
     update('isTyping', true);
 
     try { incrementTestsStarted(); } catch (e) { /* ignore */ }
@@ -1157,12 +1160,16 @@ export class Engine {
     const secondsMark = Math.floor(this.elapsed);
     const lastSecond = this.stats?.lastSecond ?? -1;
     if (secondsMark > lastSecond) {
+      // Errors DURING this second (not cumulative)
+      const errorsThisSecond = this.incorrectKeystrokes - (this._lastErrorSnapshot || 0);
+      this._lastErrorSnapshot = this.incorrectKeystrokes;
+
       this.stats?.recordSecond?.({
         time: secondsMark,
         wpm: this._currentWpm(),
         raw: this._currentRawWpm(),
         acc: this._currentAcc(),
-        errors: this.incorrectKeystrokes,
+        errors: Math.max(0, errorsThisSecond),
       });
     }
 
