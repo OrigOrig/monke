@@ -702,6 +702,62 @@ export class Engine {
     // Ignore modifier-only keys
     if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
 
+    // If the test finished, ANY keypress restarts a fresh test.
+    // This matches Monkeytype behavior: press Tab/Enter to restart,
+    // OR just start typing a new test directly.
+    if (this.isFinished) {
+      // Tab / Enter already handled by main.js quickRestart
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        this.restart({ reroll: true });
+        // Fall through so the first key registers
+        this.focus();
+      }
+      return;
+    }
+
+    // Auto-focus on first keypress
+    if (!this.isFocused) {
+      this.focus();
+    }
+
+    // Zen mode finish
+    if (this.state.mode === 'zen' && e.shiftKey && e.key === 'Enter') {
+      e.preventDefault();
+      this._finish();
+      return;
+    }
+
+    // Auto-start on first keystroke
+    if (!this.isActive && !this.isFinished) {
+      this._start();
+    }
+
+    // Backspace
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      this._handleBackspace(e.ctrlKey || e.metaKey || e.altKey);
+      return;
+    }
+
+    // Space
+    if (e.key === ' ') {
+      e.preventDefault();
+      this._handleSpace();
+      return;
+    }
+
+    // Printable characters
+    if (e.key.length === 1) {
+      if (e.ctrlKey || e.metaKey) return;
+      e.preventDefault();
+      this._handleChar(e.key);
+    }
+  }
+
+    // Ignore modifier-only keys
+    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+
     // Auto-focus on first keypress
     if (!this.isFocused) {
       this.focus();
@@ -749,8 +805,14 @@ export class Engine {
     if (!val) return;
     e.target.value = '';
 
-    if (!this.isActive && !this.isFinished) this._start();
-    if (this.isFinished) return;
+    // If test finished, first input restarts
+    if (this.isFinished) {
+      this.restart({ reroll: true });
+      this.focus();
+      return;
+    }
+
+    if (!this.isActive) this._start();
 
     for (const ch of val) {
       if (ch === ' ') this._handleSpace();
