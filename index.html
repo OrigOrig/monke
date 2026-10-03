@@ -551,6 +551,28 @@
 
       <div class="results-chart">
         <svg id="wpmChart" viewBox="0 0 600 200" preserveAspectRatio="none" role="img" aria-label="WPM over time"></svg>
+        <div class="chart-legend" id="chartLegend">
+          <button type="button" class="legend-btn" data-series="scale" title="Toggle scale axis">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 12l4-6 4 4 4-8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>scale</span>
+          </button>
+          <button type="button" class="legend-btn" data-series="pb" title="Toggle personal best line">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13V3h10l-2 3 2 3H5v4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span>pb</span>
+          </button>
+          <button type="button" class="legend-btn" data-series="raw" title="Toggle raw wpm line">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10l4-4 4 4 4-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>raw</span>
+          </button>
+          <button type="button" class="legend-btn" data-series="burst" title="Toggle burst line">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 10l4-4 4 4 4-6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>burst</span>
+          </button>
+          <button type="button" class="legend-btn" data-series="errors" title="Toggle error markers">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span>errors</span>
+          </button>
+        </div>
       </div>
 
       <footer class="modal__footer results-actions">
