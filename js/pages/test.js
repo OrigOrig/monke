@@ -202,7 +202,18 @@ export class TestPage {
 
     this._unsubs.push(
       subscribe('change:isTyping', ({ value }) => {
-        if (value) this._markStatsLive();
+        if (value) {
+          this._markStatsLive();
+          this._lockConfig(true);
+        } else {
+          this._lockConfig(false);
+        }
+      })
+    );
+
+    this._unsubs.push(
+      subscribe('change:isFinished', ({ value }) => {
+        if (value) this._lockConfig(false);
       })
     );
   }
@@ -212,6 +223,9 @@ export class TestPage {
   // ============================================================
 
   _handleModeClick(e) {
+    // Lock during an active test
+    if (this.engine.isTestActive() && !this.engine.isTestFinished()) return;
+
     const btn = e.target.closest('.config-btn');
     if (!btn) return;
     const mode = btn.dataset.mode;
@@ -282,6 +296,9 @@ export class TestPage {
   }
 
   _handleSubModeClick(e) {
+    // Lock during an active test
+    if (this.engine.isTestActive() && !this.engine.isTestFinished()) return;
+
     const btn = e.target.closest('.config-btn');
     if (!btn) return;
     const value = btn.dataset.submode;
@@ -328,6 +345,9 @@ export class TestPage {
   // ============================================================
 
   _handleToggleClick(e) {
+    // Lock during an active test
+    if (this.engine.isTestActive() && !this.engine.isTestFinished()) return;
+
     const btn = e.currentTarget;
     const key = btn.dataset.toggle;
     if (!key) return;
@@ -362,6 +382,21 @@ export class TestPage {
     this.updateModeButtons();
     this.updateSubModeActive();
     this.renderToggles();
+  }
+
+  /**
+   * Lock or unlock the config bar. Called when a test starts / ends.
+   */
+  _lockConfig(locked) {
+    const bar = document.getElementById('configBar');
+    if (!bar) return;
+
+    bar.classList.toggle('config-bar--locked', locked);
+
+    // Also make the config bar buttons non-interactive at the DOM level
+    bar.querySelectorAll('button').forEach((btn) => {
+      btn.disabled = locked;
+    });
   }
 
   // ============================================================
