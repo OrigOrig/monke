@@ -387,7 +387,11 @@ export class TestPage {
     if (!result) return;
     this._lastResult = result;
 
-    // Hide typing test, show results
+    // Hide the entire test page, show only results
+    const testPage = document.getElementById('page-test');
+    if (testPage) testPage.setAttribute('hidden', '');
+
+    // Show results page
     this.dom.resultsPage?.removeAttribute('hidden');
 
     // Populate values
@@ -424,12 +428,21 @@ export class TestPage {
     // Finish sound
     this.sound?.play?.('finish');
 
-    // Scroll to top so results are visible
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top instantly so results fill the viewport
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    // Focus the results page so keyboard shortcuts work
+    this.dom.resultsPage?.setAttribute('tabindex', '-1');
+    this.dom.resultsPage?.focus({ preventScroll: true });
   }
 
   hideResults() {
+    // Hide results, show test page again
     this.dom.resultsPage?.setAttribute('hidden', '');
+
+    const testPage = document.getElementById('page-test');
+    if (testPage) testPage.removeAttribute('hidden');
+
     this.engine.focus();
   }
 
