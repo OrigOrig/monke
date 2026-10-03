@@ -92,29 +92,6 @@ export class Screenshot {
    * @param {Object} [options]
    * @returns {Promise<Blob|null>}
    */
-  async captureResults(result, options = {}) {
-    if (!result) return null;
-
-    const card = this._buildSocialCard(result);
-    document.body.appendChild(card);
-    // Hide from view but keep rendered
-    card.style.position = 'fixed';
-    card.style.left = '-10000px';
-    card.style.top = '0';
-
-    try {
-      // Wait one frame so layout is settled
-      await this._nextFrame();
-      const blob = await this.captureElement(card, {
-        ...options,
-        background: options.background || this._resolveBackground(),
-        filename: options.filename || `typeflow-result-${result.wpm}wpm.png`,
-      });
-      return blob;
-    } finally {
-      card.remove();
-    }
-  }
 
   /**
    * Copy a PNG blob to the system clipboard.
@@ -149,6 +126,161 @@ export class Screenshot {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+
+  // ============================================================
+  // 6. SOCIAL CARD (canvas-native, no foreignObject)
+  // ============================================================
+
+  /**
+   * Build the results card entirely on canvas.
+   * No foreignObject, no taint. Ever.
+   */
+  async captureResults(result, options = {}) {
+    if (!result) return null;
+
+    const W = 800;
+    const H = 500;
+    const scale = options.scale ?? this.scale;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.scale(scale, scale);
+
+    // Read theme colors from CSS variables
+    const theme = this._readThemeColors();
+
+    // Background
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Rounded border
+    this._roundRect(ctx, 0.5, 0.5, W - 1, H - 1, 20);
+    ctx.strokeStyle = theme.border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Padding
+    const PAD = 48;
+
+    // ---------- Header ----------
+    ctx.fillStyle = theme.accent;
+    ctx.font = '700 22px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'top';
+    ctx.fillText('typeflow', PAD, PAD);
+
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = '500 12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    const modeLabel = `${result.mode || 'test'} · ${this._formatModeDetails(result)}`;
+    ctx.fillText(modeLabel.toUpperCase(), W - PAD, PAD + 6);
+    ctx.textAlign = 'left';
+
+    // Header divider
+    ctx.beginPath();
+    ctx.moveTo(PAD, PAD + 40);
+    ctx.lineTo(W - PAD, PAD + 40);
+    ctx.strokeStyle = theme.border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // ---------- Hero: WPM + ACC ----------
+    const heroY = PAD + 80;
+
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = '500 12px "JetBrains Mono", monospace';
+    ctx.fillText('WPM', PAD, heroY);
+    ctx.fillText('ACCURACY', PAD + 380, heroY);
+
+    ctx.fillStyle = theme.accent;
+    ctx.font = '700 88px "JetBrains Mono", monospace';
+    ctx.fillText(String(result.wpm ?? 0), PAD, heroY + 22);
+    ctx.fillText(`${result.acc ?? 0}%`, PAD + 380, heroY + 22);
+
+    // ---------- Bottom grid ----------
+    const gridY = H - PAD - 60;
+
+    ctx.beginPath();
+    ctx.moveTo(PAD, gridY - 20);
+    ctx.lineTo(W - PAD, gridY - 20);
+    ctx.strokeStyle = theme.border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const cells = [
+      { label: 'RAW', value: String(result.raw ?? 0) },
+      { label: 'CONSISTENCY', value: `${result.consistency ?? 100}%` },
+      { label: 'TIME', value: `${Math.round(result.time || 0)}s` },
+      {
+        label: 'CHARACTERS',
+        value: `${result.chars?.correct ?? 0}/${result.chars?.incorrect ?? 0}`,
+      },
+    ];
+
+    const cellW = (W - PAD * 2) / cells.length;
+
+    cells.forEach((cell, i) => {
+      const x = PAD + i * cellW;
+
+      ctx.fillStyle = theme.textMuted;
+      ctx.font = '500 11px "JetBrains Mono", monospace';
+      ctx.fillText(cell.label, x, gridY);
+
+      ctx.fillStyle = theme.text;
+      ctx.font = '600 22px "JetBrains Mono", monospace';
+      ctx.fillText(cell.value, x, gridY + 18);
+    });
+
+    // Convert canvas to blob
+    const blob = await this._canvasToBlob(canvas);
+
+    if (options.download !== false && blob) {
+      const filename = options.filename || `typeflow-result-${result.wpm}wpm.png`;
+      this.download(blob, filename);
+    }
+
+    return blob;
+  }
+
+  // ============================================================
+  // 7. CANVAS HELPERS
+  // ============================================================
+
+  /**
+   * Rounded-rectangle path helper for the canvas.
+   */
+  _roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /**
+   * Read the current theme's colors from CSS variables.
+   * Returns safe fallbacks if the vars aren't set.
+   */
+  _readThemeColors() {
+    const style = getComputedStyle(document.documentElement);
+    const get = (name, fallback) => {
+      const v = style.getPropertyValue(name).trim();
+      return v || fallback;
+    };
+    return {
+      bg: get('--bg-elevated', '#0f0f0f'),
+      border: get('--border-strong', 'rgba(255,255,255,0.14)'),
+      accent: get('--accent', '#e2b714'),
+      text: get('--text-primary', '#f5f5f5'),
+      textMuted: get('--text-muted', '#5a5a5a'),
+    };
   }
 
   // ============================================================
@@ -328,110 +460,6 @@ export class Screenshot {
    * Builds an off-screen DOM node styled as a branded share card.
    * Uses the active theme's CSS variables.
    */
-  _buildSocialCard(result) {
-    const card = document.createElement('div');
-    card.style.cssText = `
-      width: 800px;
-      height: 500px;
-      padding: 48px;
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      border: 1px solid var(--border-strong);
-      border-radius: 20px;
-    `;
-
-    // Header
-    const header = document.createElement('div');
-    header.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
-    `;
-
-    const brand = document.createElement('div');
-    brand.style.cssText = `
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: -0.02em;
-    `;
-    brand.textContent = 'typeflow';
-
-    const tagline = document.createElement('div');
-    tagline.style.cssText = `
-      font-size: 12px;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    `;
-    tagline.textContent = `${result.mode || 'test'} · ${this._formatModeDetails(result)}`;
-
-    header.appendChild(brand);
-    header.appendChild(tagline);
-
-    // Hero stats
-    const hero = document.createElement('div');
-    hero.style.cssText = `
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-    `;
-
-    const wpmStat = document.createElement('div');
-    wpmStat.innerHTML = `
-      <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px;">wpm</div>
-      <div style="font-size: 88px; font-weight: 700; color: var(--accent); line-height: 1; letter-spacing: -0.04em;">${result.wpm}</div>
-    `;
-
-    const accStat = document.createElement('div');
-    accStat.innerHTML = `
-      <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px;">accuracy</div>
-      <div style="font-size: 88px; font-weight: 700; color: var(--accent); line-height: 1; letter-spacing: -0.04em;">${result.acc}%</div>
-    `;
-
-    hero.appendChild(wpmStat);
-    hero.appendChild(accStat);
-
-    // Secondary stats grid
-    const grid = document.createElement('div');
-    grid.style.cssText = `
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      margin-top: auto;
-    `;
-
-    const items = [
-      { label: 'raw', value: result.raw },
-      { label: 'consistency', value: `${result.consistency}%` },
-      { label: 'time', value: `${Math.round(result.time)}s` },
-      { label: 'characters', value: `${result.chars?.correct ?? 0}/${result.chars?.incorrect ?? 0}` },
-    ];
-
-    for (const item of items) {
-      const cell = document.createElement('div');
-      cell.innerHTML = `
-        <div style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px;">${item.label}</div>
-        <div style="font-size: 24px; font-weight: 600; color: var(--text-primary);">${item.value}</div>
-      `;
-      grid.appendChild(cell);
-    }
-
-    card.appendChild(header);
-    card.appendChild(hero);
-    card.appendChild(grid);
-
-    return card;
-  }
 
   _formatModeDetails(result) {
     if (result.mode === 'time') return `${result.timeLimit || 30}s`;
