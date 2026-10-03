@@ -357,8 +357,11 @@ function attachGlobalListeners() {
     if (e.target === DOM.commandOverlay) closeCommandPalette();
   });
 
-  DOM.resultsOverlay?.addEventListener('click', (e) => {
-    if (e.target === DOM.resultsOverlay) closeResults();
+  DOM.resultsOverlay?.addEventListener('mousedown', (e) => {
+    if (e.target === DOM.resultsOverlay) {
+      e.preventDefault();
+      closeResults();
+    }
   });
 
   DOM.customTextOverlay?.addEventListener('click', (e) => {
@@ -641,8 +644,13 @@ function closeSettings() {
 }
 
 function closeResults() {
-  DOM.resultsOverlay?.setAttribute('hidden', '');
-  modules.engine.focus();
+  // Delegate to the test page so it runs the refocus logic
+  if (modules.pages?.test?.hideResults) {
+    modules.pages.test.hideResults();
+  } else {
+    DOM.resultsOverlay?.setAttribute('hidden', '');
+    modules.engine.focus();
+  }
 }
 
 function openCustomTextModal() {
