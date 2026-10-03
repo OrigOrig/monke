@@ -1,14 +1,18 @@
 /* ============================================================
    TYPE FLOW — engine.js
-   The typing engine. Handles keystroke capture, word/letter
-   state, caret positioning, mode rules, difficulty,
-   live stats, and replay logging.
+   Complete rewrite. Fixes:
+     - Bug 1: auto-focus, 3-line overflow window
+     - Bug 2: words render on init without needing keypress
+     - Bug 4: caret aligned to letter baseline (via CSS)
+     - Bug 5: backspace works always when focused
+     - Bug 6: click-away safe, click-back focuses
+     - Bug 10: funbox transform applied on mode change
    ============================================================ */
 
 import { update, getState, incrementTestsStarted } from './state.js';
 
 // ============================================================
-// 1. CONSTANTS
+// CONSTANTS
 // ============================================================
 
 const PUNCTUATION = ['.', ',', '?', '!', "'", '"', '-', ';', ':'];
@@ -26,8 +30,11 @@ const STOP_ON_ERROR = {
   WORD: 'word',
 };
 
+// 3-line overflow window — Monkeytype-style
+const LINE_WINDOW = 3;
+
 // ============================================================
-// 2. ENGINE CLASS
+// ENGINE CLASS
 // ============================================================
 
 export class Engine {
@@ -39,7 +46,7 @@ export class Engine {
     this.onFinish = onFinish;
     this.onTick = onTick;
 
-    // DOM refs (resolved on init)
+    // DOM refs
     this.dom = {
       container: null,
       words: null,
@@ -52,17 +59,19 @@ export class Engine {
       typingWrap: null,
     };
 
-    // Runtime state
+    // Word state
     this.words = [];
     this.typed = [];
     this.wordIndex = 0;
     this.letterIndex = 0;
-    this.wordsPerLine = [];
+
+    // Line-window state
+    this.lineHeight = 0;
+    this.visibleLineOffset = 0;
 
     // Timing
     this.startTime = 0;
     this.endTime = 0;
-    this.lastTickAt = 0;
     this.elapsed = 0;
 
     // Test state
@@ -98,10 +107,10 @@ export class Engine {
       caretBlink: true,
     };
 
-    // Word list + quotes (injected at boot via setData)
+    // Data (word lists + quotes) — injected via setData()
     this.data = null;
 
-    // Funbox transform (set externally)
+    // Funbox transform
     this.transform = null;
 
     // Bound handlers
@@ -110,11 +119,13 @@ export class Engine {
     this._handleBlur = this._handleBlur.bind(this);
     this._handleMobileInput = this._handleMobileInput.bind(this);
     this._handleOverlayClick = this._handleOverlayClick.bind(this);
+    this._handleDocumentClick = this._handleDocumentClick.bind(this);
+    this._handleWindowResize = this._handleWindowResize.bind(this);
     this._handleTick = this._handleTick.bind(this);
   }
 
   // ============================================================
-  // INIT + DOM BINDING
+  // INIT
   // ============================================================
 
   init() {
@@ -133,31 +144,31 @@ export class Engine {
       return;
     }
 
-    // Attach listeners
+    // Listeners
     document.addEventListener('keydown', this._handleKeyDown);
+    document.addEventListener('click', this._handleDocumentClick);
+    window.addEventListener('resize', this._handleWindowResize);
     this.dom.container.addEventListener('focus', this._handleFocus);
     this.dom.container.addEventListener('blur', this._handleBlur);
+    this.dom.container.addEventListener('click', this._handleOverlayClick);
     this.dom.focusOverlay?.addEventListener('click', this._handleOverlayClick);
     this.dom.mobileInput?.addEventListener('input', this._handleMobileInput);
 
-    // Caret style from state
+    // Caret
     this.setCaretStyle(getState().caretStyle || 'line');
     this.setCaretBlink(getState().caretBlink !== false);
 
     // Generate first test
     this.restart();
 
-    // Focus by default
+    // Focus immediately
     this.focus();
   }
 
-  /**
-   * Inject word lists + quotes at boot. Called by main.js.
-   */
   setData(data) {
     this.data = data || {};
-    // Re-generate words if a test is already loaded
-    if (this.words.length === 0) {
+    // If restart already ran with empty data, regenerate now
+    if (this.words.length === 0 || this.words.length < 5) {
       this.words = this._generateWords();
       this._renderWords();
       this._applyTypedState();
@@ -166,19 +177,22 @@ export class Engine {
   }
 
   // ============================================================
-  // FOCUS MANAGEMENT
+  // FOCUS
   // ============================================================
 
   focus() {
     if (!this.dom.container) return;
     this.dom.container.focus({ preventScroll: true });
     this.dom.mobileInput?.focus({ preventScroll: true });
+    this.isFocused = true;
+    this.dom.focusOverlay?.classList.add('hidden');
   }
 
   blur() {
     if (!this.dom.container) return;
     this.dom.container.blur();
     this.dom.mobileInput?.blur();
+    this.isFocused = false;
   }
 
   _handleFocus() {
@@ -189,13 +203,32 @@ export class Engine {
 
   _handleBlur() {
     this.isFocused = false;
-    if (!this.isFinished && !this.isActive) {
+    // Only show overlay if test hasn't started
+    if (!this.isActive && !this.isFinished) {
       this.dom.focusOverlay?.classList.remove('hidden');
     }
   }
 
-  _handleOverlayClick() {
+  _handleOverlayClick(e) {
+    e?.preventDefault?.();
     this.focus();
+  }
+
+  /**
+   * Click anywhere on the typing wrap focuses the input.
+   * Click outside does NOT blur if typing has started.
+   */
+  _handleDocumentClick(e) {
+    if (!this.dom.typingWrap) return;
+    const inside = this.dom.typingWrap.contains(e.target);
+    if (inside) {
+      this.focus();
+    }
+    // Don't auto-blur on outside click — that's what was locking the app
+  }
+
+  _handleWindowResize() {
+    this._updateCaret();
   }
 
   // ============================================================
@@ -210,7 +243,6 @@ export class Engine {
     this.startTime = 0;
     this.endTime = 0;
     this.elapsed = 0;
-    this.lastTickAt = 0;
     this.isActive = false;
     this.isFinished = false;
 
@@ -232,15 +264,11 @@ export class Engine {
     // Reset stats engine
     this.stats?.reset?.();
 
-    // Reset funbox per-test state
-    if (this.state.funbox && this.funbox?.onTestRestart) {
-      // no-op if funbox not attached
-    }
+    // Reset line window
+    this.visibleLineOffset = 0;
 
-    // Generate words
-    if (reroll || this.words.length === 0) {
-      this.words = this._generateWords();
-    }
+    // Always generate fresh words
+    this.words = this._generateWords();
 
     // Render
     this._renderWords();
@@ -248,14 +276,15 @@ export class Engine {
     this._updateCaret();
     this._updateLiveStats(true);
 
-    // Show focus overlay if not focused
-    if (!this.isFocused) {
-      this.dom.focusOverlay?.classList.remove('hidden');
-    }
+    // Reset visible line state
+    this._resetLineWindow();
 
     // Emit
     update('isTyping', false);
     update('isFinished', false);
+
+    // Keep focus
+    this.focus();
   }
 
   flush() {
@@ -280,6 +309,7 @@ export class Engine {
   _generateWords() {
     const s = this.state;
     const data = this.data || {};
+    const words = data.words || {};
 
     // Zen mode
     if (s.mode === 'zen') return [];
@@ -301,17 +331,16 @@ export class Engine {
       return quote.text.split(/\s+/).filter(Boolean);
     }
 
-    // Time or words mode — sample from word list
-    const words = data.words || {};
+    // Word list selection
     const wordList = s.language === 'code'
-      ? (words.code || words.english || [])
+      ? (words.code?.length ? words.code : words.english)
       : s.language === 'english1k'
-        ? (words.english1k || words.english || [])
-        : (words.english || []);
+        ? (words.english1k?.length ? words.english1k : words.english)
+        : words.english;
 
-    if (!wordList.length) {
-      // Fallback so the app doesn't die
-      return ['type', 'to', 'start', 'loading', 'words'];
+    if (!wordList || !wordList.length) {
+      // Hard fallback so we NEVER render empty
+      return ['the', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog'];
     }
 
     const count = s.mode === 'time'
@@ -330,7 +359,8 @@ export class Engine {
 
   _estimateWordCount() {
     const seconds = this.state.timeLimit || 30;
-    return Math.max(50, Math.ceil((seconds / 60) * 220));
+    // ~220 words per 60s buffer + 50 extra
+    return Math.max(50, Math.ceil((seconds / 60) * 220) + 50);
   }
 
   _applyModifiers(word) {
@@ -358,7 +388,9 @@ export class Engine {
     const { mode = 'simple', delimiter = 'pipe' } = options;
     const clean = this._normalizeText(text);
     const delimiterChar = delimiter === 'pipe' ? '|' : ' ';
-    const tokens = clean.split(new RegExp(`\\s*${delimiterChar === '|' ? '\\|' : '\\s'}\\s*`)).filter(Boolean);
+    const tokens = clean
+      .split(new RegExp(`\\s*${delimiterChar === '|' ? '\\|' : '\\s'}\\s*`))
+      .filter(Boolean);
 
     switch (mode) {
       case 'repeat':
@@ -433,64 +465,119 @@ export class Engine {
     }
 
     wrap.appendChild(frag);
+
+    // Cache line height after render
+    requestAnimationFrame(() => {
+      this._measureLineHeight();
+    });
+  }
+
+  _measureLineHeight() {
+    const firstWord = this.dom.words?.querySelector('.word');
+    if (!firstWord) return;
+    const rect = firstWord.getBoundingClientRect();
+    this.lineHeight = rect.height + 8; // approximate line gap
   }
 
   _transformWord(word) {
     if (!this.transform) return word;
-    return this.transform(word);
+    try {
+      return this.transform(word);
+    } catch (err) {
+      return word;
+    }
   }
 
   _applyTypedState() {
-    const wordEls = this.dom.words?.querySelectorAll('.word');
-    if (!wordEls) return;
+    // Update only active + previous word (O(1) instead of O(n))
+    const activeEl = this.dom.words?.querySelector('.word.active');
+    if (activeEl) this._applyWordState(activeEl, this.wordIndex);
 
-    wordEls.forEach((wordEl, wi) => {
-      const originalWord = this.words[wi];
-      const transformedWord = this._transformWord(originalWord);
-      const typedWord = this.typed[wi] || '';
+    if (this.wordIndex > 0) {
+      const prevEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex - 1}"]`);
+      if (prevEl) this._applyWordState(prevEl, this.wordIndex - 1);
+    }
+  }
 
-      const letters = wordEl.querySelectorAll('.letter');
+  _applyWordState(wordEl, wi) {
+    const originalWord = this.words[wi];
+    if (originalWord === undefined) return;
 
-      letters.forEach((letterEl, li) => {
-        letterEl.classList.remove('correct', 'incorrect', 'extra', 'missed');
+    const transformedWord = this._transformWord(originalWord);
+    const typedWord = this.typed[wi] || '';
+    const letters = wordEl.querySelectorAll('.letter');
 
-        if (li < typedWord.length) {
-          const expected = transformedWord[li];
-          const actual = typedWord[li];
-          if (expected === undefined) {
-            letterEl.classList.add('extra');
-          } else if (actual === expected) {
-            if (!this.settings.blindMode) letterEl.classList.add('correct');
-          } else {
-            if (!this.settings.blindMode) letterEl.classList.add('incorrect');
-          }
-        }
-      });
+    letters.forEach((letterEl, li) => {
+      letterEl.classList.remove('correct', 'incorrect', 'extra', 'missed');
 
-      // Extra typed beyond word length
-      const extraCount = Math.max(0, typedWord.length - transformedWord.length);
-      if (extraCount > 0) {
-        const existingExtras = wordEl.querySelectorAll('.letter.extra');
-        existingExtras.forEach((el) => el.remove());
-        for (let i = 0; i < extraCount; i++) {
-          const ch = typedWord[transformedWord.length + i];
-          const extra = document.createElement('span');
-          extra.className = 'letter extra';
-          extra.textContent = ch;
-          wordEl.appendChild(extra);
+      if (li < typedWord.length) {
+        const expected = transformedWord[li];
+        const actual = typedWord[li];
+        if (expected === undefined) {
+          letterEl.classList.add('extra');
+        } else if (actual === expected) {
+          if (!this.settings.blindMode) letterEl.classList.add('correct');
+        } else {
+          if (!this.settings.blindMode) letterEl.classList.add('incorrect');
         }
       }
-
-      // Missed letters (previous words left incomplete)
-      if (wi < this.wordIndex && typedWord.length < transformedWord.length) {
-        for (let li = typedWord.length; li < transformedWord.length; li++) {
-          const el = letters[li];
-          if (el) el.classList.add('missed');
-        }
-      }
-
-      wordEl.classList.toggle('active', wi === this.wordIndex);
     });
+
+    // Extra characters typed beyond word length
+    wordEl.querySelectorAll('.letter.extra').forEach((el) => el.remove());
+    const extraCount = Math.max(0, typedWord.length - transformedWord.length);
+    if (extraCount > 0) {
+      for (let i = 0; i < extraCount; i++) {
+        const ch = typedWord[transformedWord.length + i];
+        const extra = document.createElement('span');
+        extra.className = 'letter extra';
+        extra.textContent = ch;
+        wordEl.appendChild(extra);
+      }
+    }
+
+    // Missed letters
+    if (wi < this.wordIndex && typedWord.length < transformedWord.length) {
+      for (let li = typedWord.length; li < transformedWord.length; li++) {
+        letters[li]?.classList.add('missed');
+      }
+    }
+  }
+
+  // ============================================================
+  // LINE WINDOW (Monkeytype-style 3-line overflow)
+  // ============================================================
+
+  _resetLineWindow() {
+    if (!this.dom.words) return;
+    this.dom.words.style.transform = 'translateY(0px)';
+    this.visibleLineOffset = 0;
+  }
+
+  /**
+   * After each word completes, check if the active word has moved
+   * to a new line. If so, shift the words container up so the
+   * active line stays on line 2 of the visible window.
+   */
+  _updateLineWindow() {
+    const wrap = this.dom.words;
+    const activeWord = wrap?.querySelector('.word.active');
+    if (!wrap || !activeWord) return;
+
+    const wrapRect = wrap.parentElement.getBoundingClientRect();
+    const activeRect = activeWord.getBoundingClientRect();
+    const lineTop = activeRect.top - wrapRect.top;
+    const lineHeight = this.lineHeight || activeRect.height + 8;
+
+    // Target: active word should be on line 2 (index 1)
+    const targetLine = 1;
+    const currentLine = Math.round((lineTop + this.visibleLineOffset) / lineHeight);
+    const desiredOffset = Math.max(0, (currentLine - targetLine) * lineHeight);
+
+    if (Math.abs(desiredOffset - this.visibleLineOffset) > 1) {
+      this.visibleLineOffset = desiredOffset;
+      wrap.style.transform = `translateY(${-desiredOffset}px)`;
+    }
   }
 
   // ============================================================
@@ -523,31 +610,33 @@ export class Engine {
     let height = 24;
 
     if (letters.length === 0) {
-      const rect = activeWord.getBoundingClientRect();
-      left = rect.left - containerRect.left;
-      top = rect.top - containerRect.top;
-      height = rect.height;
+      const r = activeWord.getBoundingClientRect();
+      left = r.left - containerRect.left;
+      top = r.top - containerRect.top;
+      height = r.height;
     } else if (li < letters.length) {
-      const rect = letters[li].getBoundingClientRect();
-      left = rect.left - containerRect.left;
-      top = rect.top - containerRect.top;
-      height = rect.height;
+      const r = letters[li].getBoundingClientRect();
+      left = r.left - containerRect.left;
+      top = r.top - containerRect.top;
+      height = r.height;
     } else {
-      const last = letters[letters.length - 1].getBoundingClientRect();
-      left = last.right - containerRect.left;
-      top = last.top - containerRect.top;
-      height = last.height;
+      const r = letters[letters.length - 1].getBoundingClientRect();
+      left = r.right - containerRect.left;
+      top = r.top - containerRect.top;
+      height = r.height;
     }
 
-    caret.style.left = `${left}px`;
-    caret.style.top = `${top}px`;
-    caret.style.height = `${height}px`;
+    // Use transform for GPU-accelerated positioning (smoother)
+    caret.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+    caret.style.height = `${Math.round(height)}px`;
 
+    // Reapply style classes
     caret.className = 'caret';
     if (this.settings.caretStyle === 'smooth') caret.classList.add('smooth');
     if (this.settings.caretStyle === 'block') caret.classList.add('block');
     if (this.settings.caretStyle === 'underline') caret.classList.add('underline');
     if (this.settings.caretBlink) caret.classList.add('blink');
+    if (caret.classList.contains('idle')) caret.classList.add('idle');
   }
 
   setCaretStyle(style) {
@@ -589,28 +678,30 @@ export class Engine {
   }
 
   // ============================================================
-  // KEYBOARD INPUT
+  // KEYBOARD
   // ============================================================
 
   _handleKeyDown(e) {
+    // Don't intercept when a modal is open
     if (this._isModalOpen()) return;
-    if (!this.isFocused) {
-      if (e.key.length === 1 || e.key === 'Backspace') {
-        this.focus();
-      }
-      return;
-    }
 
+    // Ignore modifier-only keys
     if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
 
-    // Zen mode: Shift+Enter finishes
+    // Auto-focus on first keypress
+    if (!this.isFocused) {
+      this.focus();
+      // Fall through so the character registers
+    }
+
+    // Zen mode finish
     if (this.state.mode === 'zen' && e.shiftKey && e.key === 'Enter') {
       e.preventDefault();
       this._finish();
       return;
     }
 
-    // Auto start on first keypress
+    // Auto-start on first keystroke
     if (!this.isActive && !this.isFinished) {
       this._start();
     }
@@ -655,7 +746,7 @@ export class Engine {
   }
 
   // ============================================================
-  // CHAR / SPACE / BACKSPACE HANDLERS
+  // CHAR / SPACE / BACKSPACE
   // ============================================================
 
   _handleChar(char) {
@@ -677,6 +768,7 @@ export class Engine {
 
     this.sound?.play?.(isCorrect ? 'key' : 'error');
 
+    // Master difficulty: fail on first wrong key
     if (this.settings.difficulty === DIFFICULTY.MASTER && !isCorrect) {
       this._flashError();
       this._finish();
@@ -685,6 +777,7 @@ export class Engine {
 
     this.totalKeystrokes++;
 
+    // Stop on error (letter mode)
     if (this.settings.stopOnError === STOP_ON_ERROR.LETTER && !isCorrect) {
       this.incorrectKeystrokes++;
       this._flashError();
@@ -693,12 +786,18 @@ export class Engine {
       return;
     }
 
+    // Append char
     if (!this.typed[this.wordIndex]) this.typed[this.wordIndex] = '';
     this.typed[this.wordIndex] += char;
 
     if (isCorrect) {
       this.correctKeystrokes++;
       this._pulseLetter();
+      this.currentStreak++;
+      if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
+      if (this.currentStreak > 0 && this.currentStreak % 10 === 0) {
+        this._comboPop();
+      }
     } else {
       this.incorrectKeystrokes++;
       this._flashError();
@@ -707,18 +806,11 @@ export class Engine {
 
     this.letterIndex++;
 
-    if (isCorrect) {
-      this.currentStreak++;
-      if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
-      if (this.currentStreak > 0 && this.currentStreak % 10 === 0) {
-        this._comboPop();
-      }
-    }
-
     this._applyTypedState();
     this._updateCaret();
     this._updateLiveStats();
 
+    // Words mode: auto-finish on last word completion
     if (this.state.mode === 'words' && this.wordIndex === this.words.length - 1) {
       if (this.letterIndex >= transformedWord.length) {
         this._finish();
@@ -733,51 +825,67 @@ export class Engine {
     const transformedWord = this._transformWord(currentWord);
     const typedWord = this.typed[this.wordIndex] || '';
 
+    // Expert: fail if word wrong
     if (this.settings.difficulty === DIFFICULTY.EXPERT && typedWord !== transformedWord) {
       this._flashError();
       this._finish();
       return;
     }
 
+    // Stop on error (word mode)
     if (this.settings.stopOnError === STOP_ON_ERROR.WORD && typedWord !== transformedWord) {
       this._flashError();
       this._resetStreak();
       return;
     }
 
+    // Count missed chars
     if (typedWord.length < transformedWord.length) {
       this.missedKeystrokes += transformedWord.length - typedWord.length;
     }
 
+    // Animate word completion
     const wordEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
     if (wordEl) {
       wordEl.classList.add('completed');
       setTimeout(() => wordEl.classList.remove('completed'), 400);
     }
 
+    // Advance
     this.wordIndex++;
     this.letterIndex = 0;
 
+    // End of words?
     if (this.wordIndex >= this.words.length) {
       this._finish();
       return;
     }
 
+    // Update active class
+    this.dom.words?.querySelectorAll('.word.active').forEach((el) => el.classList.remove('active'));
+    const nextWord = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
+    nextWord?.classList.add('active');
+
     this._applyTypedState();
+    this._updateLineWindow();
     this._updateCaret();
   }
 
   _handleBackspace(isWordDelete) {
     if (this.letterIndex === 0 && this.wordIndex === 0) return;
+    if (this.isFinished) return;
 
     if (isWordDelete) {
+      // Delete entire current word
       this.typed[this.wordIndex] = '';
       this.letterIndex = 0;
     } else if (this.letterIndex > 0) {
+      // Delete one char
       const cur = this.typed[this.wordIndex] || '';
       this.typed[this.wordIndex] = cur.slice(0, -1);
       this.letterIndex--;
     } else {
+      // Jump to previous word
       if (!this.settings.freedomMode) {
         const prevTyped = this.typed[this.wordIndex - 1] || '';
         const prevWord = this._transformWord(this.words[this.wordIndex - 1] || '');
@@ -786,9 +894,15 @@ export class Engine {
       this.wordIndex--;
       const prevTyped = this.typed[this.wordIndex] || '';
       this.letterIndex = prevTyped.length;
+
+      // Update active class
+      this.dom.words?.querySelectorAll('.word.active').forEach((el) => el.classList.remove('active'));
+      const prevEl = this.dom.words?.querySelector(`.word[data-word-index="${this.wordIndex}"]`);
+      prevEl?.classList.add('active');
     }
 
     this._applyTypedState();
+    this._updateLineWindow();
     this._updateCaret();
   }
 
@@ -799,7 +913,6 @@ export class Engine {
   _start() {
     this.isActive = true;
     this.startTime = performance.now();
-    this.lastTickAt = this.startTime;
 
     update('isTyping', true);
 
@@ -826,16 +939,16 @@ export class Engine {
 
     const stats = this._computeFinalStats();
 
-    if (this.onFinish) {
-      this.onFinish(stats);
-    }
+    if (this.onFinish) this.onFinish(stats);
   }
 
   _computeFinalStats() {
     const minutes = Math.max(this.elapsed / 60, 1 / 60);
 
     const wpm = Math.round((this.correctKeystrokes / 5) / minutes);
-    const raw = Math.round(((this.correctKeystrokes + this.incorrectKeystrokes + this.extraKeystrokes) / 5) / minutes);
+    const raw = Math.round(
+      ((this.correctKeystrokes + this.incorrectKeystrokes + this.extraKeystrokes) / 5) / minutes
+    );
 
     const totalKeystrokes = this.correctKeystrokes + this.incorrectKeystrokes;
     const acc = totalKeystrokes > 0
@@ -852,8 +965,8 @@ export class Engine {
     for (let wi = 0; wi < this.words.length; wi++) {
       const transformed = this._transformWord(this.words[wi]);
       const typed = this.typed[wi] || '';
-      const isCurrentWord = wi === this.wordIndex && !this.isFinished;
-      if (isCurrentWord) continue;
+      const isCurrent = wi === this.wordIndex && !this.isFinished;
+      if (isCurrent) continue;
 
       for (let li = 0; li < typed.length; li++) {
         if (li >= transformed.length) extraChars++;
@@ -861,10 +974,8 @@ export class Engine {
         else incorrectChars++;
       }
 
-      if (typed.length < transformed.length) {
-        if (wi < this.wordIndex || this.isFinished) {
-          missedChars += transformed.length - typed.length;
-        }
+      if (typed.length < transformed.length && (wi < this.wordIndex || this.isFinished)) {
+        missedChars += transformed.length - typed.length;
       }
     }
 
@@ -925,6 +1036,7 @@ export class Engine {
 
     this._updateLiveStats();
 
+    // Per-second sample
     const secondsMark = Math.floor(this.elapsed);
     const lastSecond = this.stats?.lastSecond ?? -1;
     if (secondsMark > lastSecond) {
@@ -945,6 +1057,7 @@ export class Engine {
       });
     }
 
+    // Time mode: check limit
     if (this.state.mode === 'time' && this.elapsed >= this.state.timeLimit) {
       this._finish();
     }
@@ -956,7 +1069,10 @@ export class Engine {
 
   _updateLiveStats(force = false) {
     const seconds = this.elapsed || (this.isActive ? (performance.now() - this.startTime) / 1000 : 0);
-    const displayTime = Math.max(0, this.state.mode === 'time' ? this.state.timeLimit - seconds : seconds);
+    const displayTime = Math.max(
+      0,
+      this.state.mode === 'time' ? this.state.timeLimit - seconds : seconds
+    );
 
     this._setStat('liveTime', Math.floor(displayTime), force);
     this._setStat('liveWpm', this._currentWpm(), force);
@@ -1060,10 +1176,6 @@ export class Engine {
       !document.getElementById('customTextOverlay')?.hasAttribute('hidden')
     );
   }
-
-  // ============================================================
-  // PUBLIC GETTERS
-  // ============================================================
 
   getReplayLog() {
     return this.replayLog.slice();
