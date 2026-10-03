@@ -521,11 +521,24 @@ export class TestPage {
     const x = (t) => pad.left + (t / maxTime) * chartW;
     const y = (v) => pad.top + chartH - (v / maxWpm) * chartH;
 
+    // Compute burst (best wpm over last 3 samples)
+    const burstData = data.map((d, i) => {
+      const window = data.slice(Math.max(0, i - 2), i + 1);
+      const best = Math.max(...window.map((w) => w.wpm));
+      return { time: d.time, burst: best };
+    });
+
+    const maxBurst = Math.max(...burstData.map((d) => d.burst), 10);
+    const yBurst = (v) => pad.top + chartH - (v / maxBurst) * chartH;
+
     const wpmPath = data
       .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.wpm)}`)
       .join(' ');
     const rawPath = data
       .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${y(d.raw)}`)
+      .join(' ');
+    const burstPath = burstData
+      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.time)} ${yBurst(d.burst)}`)
       .join(' ');
 
     const errorMarkers = data
@@ -545,11 +558,121 @@ export class TestPage {
     svg.innerHTML = `
       ${gridLines}
       <path d="${rawPath}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="${burstPath}" fill="none" stroke="var(--accent-hover)" stroke-width="1.5" stroke-dasharray="6 4" stroke-linejoin="round" />
       <path d="${wpmPath}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" />
       ${errorMarkers}
     `;
+
+    // Attach hover handler
+    this._attachChartHover(data, { x, y, W, H, pad });
   }
 
+  /**
+   * Attach a hover handler that shows a floating tooltip with
+   * per-second stats: errors / wpm / raw / burst.
+   */
+  _attachChartHover(data, scales) {
+    const chartEl = this.dom.wpmChart?.parentElement;
+    if (!chartEl) return;
+
+    // Remove any existing hover overlay
+    chartEl.querySelector('.chart-hover')?.remove();
+
+    // Create hover overlay
+    const hover = document.createElement('div');
+    hover.className = 'chart-hover';
+    chartEl.appendChild(hover);
+
+    // Create vertical line + dot
+    const line = document.createElement('div');
+    line.className = 'chart-hover-line';
+    hover.appendChild(line);
+
+    const dot = document.createElement('div');
+    dot.className = 'chart-hover-dot';
+    hover.appendChild(dot);
+
+    // Create tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip tooltip--chart';
+    tooltip.innerHTML = '';
+    chartEl.appendChild(tooltip);
+
+    const svgRect = this.dom.wpmChart.getBoundingClientRect();
+
+    const onMove = (e) => {
+      const rect = chartEl.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+
+      // Find nearest data point
+      const W = scales.W;
+      const pad = scales.pad;
+      const chartW = W - pad.left - pad.right;
+      const maxTime = data[data.length - 1].time;
+
+      // Convert mx (in CSS pixels of the chart container) to the SVG's viewBox coordinate space
+      const svgScale = W / rect.width;
+      const svgX = mx * svgScale;
+
+      // Find the closest time value
+      const relX = (svgX - pad.left) / chartW;
+      const targetTime = relX * maxTime;
+
+      let closest = data[0];
+      let closestDist = Infinity;
+      for (const d of data) {
+        const dist = Math.abs(d.time - targetTime);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = d;
+        }
+      }
+
+      // Compute burst
+      const idx = data.indexOf(closest);
+      const window = data.slice(Math.max(0, idx - 2), idx + 1);
+      const burst = Math.max(...window.map((w) => w.wpm));
+
+      // Position line + dot (in CSS pixels)
+      const lineX = (scales.x(closest.time) / svgScale);
+      const dotY = (scales.y(closest.wpm) / svgScale);
+
+      line.style.left = `${lineX}px`;
+      line.style.opacity = '1';
+
+      dot.style.left = `${lineX}px`;
+      dot.style.top = `${dotY + 12}px`;
+      dot.style.opacity = '1';
+
+      // Populate tooltip
+      tooltip.innerHTML = `
+        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--incorrect"></span><span class="tooltip__label">errors: ${closest.errors}</span></div>
+        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--correct"></span><span class="tooltip__label">wpm: ${closest.wpm}</span></div>
+        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--extra"></span><span class="tooltip__label">raw: ${closest.raw}</span></div>
+        <div class="tooltip__row"><span class="tooltip__swatch tooltip__swatch--missed"></span><span class="tooltip__label">burst: ${burst}</span></div>
+      `;
+
+      // Position tooltip — above the line, follow the mouse
+      const tooltipX = Math.min(Math.max(lineX - 60, 0), rect.width - 140);
+      tooltip.style.left = `${tooltipX}px`;
+      tooltip.style.bottom = `calc(100% - ${dotY}px + 12px)`;
+      tooltip.style.top = 'auto';
+      tooltip.style.opacity = '1';
+      tooltip.style.transform = 'translateX(0)';
+      tooltip.style.pointerEvents = 'none';
+    };
+
+    const onLeave = () => {
+      line.style.opacity = '0';
+      dot.style.opacity = '0';
+      tooltip.style.opacity = '0';
+    };
+
+    hover.style.pointerEvents = 'auto';
+    hover.addEventListener('mousemove', onMove);
+    hover.addEventListener('mouseleave', onLeave);
+  }
+   
   // ============================================================
   // EFFECTS
   // ============================================================
