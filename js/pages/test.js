@@ -744,7 +744,7 @@ export class TestPage {
     const legend = document.getElementById('chartLegend');
     if (!legend) return;
 
-    // Apply current active states
+    // Apply current active states to all buttons
     const visibility = this._getChartVisibility();
     legend.querySelectorAll('.legend-btn').forEach((btn) => {
       const series = btn.dataset.series;
@@ -752,24 +752,30 @@ export class TestPage {
       btn.dataset.active = String(isOn);
     });
 
-    // Remove any old listeners by cloning
-    const freshLegend = legend.cloneNode(true);
-    legend.parentNode.replaceChild(freshLegend, legend);
+    // Attach one handler to the legend container (event delegation).
+    // Only attach once — mark with a data attribute.
+    if (legend.dataset.wired === 'true') return;
+    legend.dataset.wired = 'true';
 
-    // Attach fresh listeners
-    freshLegend.querySelectorAll('.legend-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const series = btn.dataset.series;
-        const vis = this._getChartVisibility();
-        vis[series] = !vis[series];
-        this._setChartVisibility(vis);
-        btn.dataset.active = String(vis[series]);
+    legend.addEventListener('click', (e) => {
+      const btn = e.target.closest('.legend-btn');
+      if (!btn) return;
 
-        // Redraw
-        if (this._lastResult?.chartData) {
-          this._drawChart(this._lastResult.chartData);
-        }
-      });
+      const series = btn.dataset.series;
+      if (!series) return;
+
+      // Toggle in localStorage
+      const vis = this._getChartVisibility();
+      vis[series] = !vis[series];
+      this._setChartVisibility(vis);
+
+      // Update button visual state
+      btn.dataset.active = String(vis[series]);
+
+      // Redraw the chart with new visibility
+      if (this._lastResult?.chartData) {
+        this._drawChart(this._lastResult.chartData);
+      }
     });
   }
    
