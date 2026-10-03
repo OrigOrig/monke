@@ -818,6 +818,10 @@ function exposeToWindow() {
     getState,
     modules,
     version: '1.0.0',
+    // Convenience aliases for debugging
+    get engine() { return modules.engine; },
+    get router() { return modules.router; },
+    get testPage() { return modules.pages.test; },
   };
 }
 
