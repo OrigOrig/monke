@@ -4,6 +4,7 @@
    ============================================================ */
 
 import { getState, update, subscribe } from '../state.js';
+import { Practice } from '../practice.js';
 
 // ============================================================
 // CONSTANTS
