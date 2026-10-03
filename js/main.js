@@ -504,6 +504,16 @@ function updateNavActive(route) {
 function attachSettingsControls() {
   // Toggle groups
   document.querySelectorAll('.setting-control').forEach((control) => {
+    // Highlight the currently active option on load
+    const setting = control.dataset.setting;
+    if (setting) {
+      const currentValue = String(getState()[setting]);
+      control.querySelectorAll('.config-btn').forEach((b) => {
+        const matches = b.dataset.value === currentValue;
+        b.classList.toggle('active', matches);
+      });
+    }
+
     control.addEventListener('click', (e) => {
       const btn = e.target.closest('.config-btn');
       if (!btn) return;
@@ -515,6 +525,11 @@ function attachSettingsControls() {
 
       update(setting, coerced);
       applySettingSideEffects(setting, coerced);
+
+      // Sync visual active state
+      control.querySelectorAll('.config-btn').forEach((b) => {
+        b.classList.toggle('active', b === btn);
+      });
     });
   });
 
