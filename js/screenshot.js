@@ -253,21 +253,13 @@ export class Screenshot {
   // ============================================================
 
   _buildSVG(html, width, height, background) {
-    const encoded = html
-      // Escape special chars inside foreignObject content
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-
-    // Wait — actually the standard approach is to NOT escape the HTML,
-    // just embed it raw. But XMLSerializer output must be valid XML.
-    // The safer approach: escape only ampersands that aren't already
-    // part of an entity. This is tricky; instead we use a CDATA-ish
-    // approach by embedding the serialized node directly.
-
-    // Re-serialize properly for foreignObject
-    const xml = html; // already serialized by XMLSerializer
+    // Strip external resources (<link>, <script>, @import) that taint
+    // the canvas. Google Fonts <link> tags are the most common culprit.
+    // The system font stack is used as fallback.
+    const sanitized = String(html)
+      .replace(/<link\b[^>]*>/gi, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/@import\s+[^;]+;/g, '');
 
     return `
       <svg xmlns="http://www.w3.org/2000/svg"
@@ -275,7 +267,7 @@ export class Screenshot {
            height="${height}"
            viewBox="0 0 ${width} ${height}">
         <foreignObject width="100%" height="100%">
-          ${xml}
+          ${sanitized}
         </foreignObject>
       </svg>
     `.trim();
@@ -306,11 +298,25 @@ export class Screenshot {
 
   _canvasToBlob(canvas) {
     return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('toBlob returned null'))),
-        'image/png',
-        1.0
-      );
+      try {
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('toBlob returned null'))),
+          'image/png',
+          1.0
+        );
+      } catch (err) {
+        // Fallback for tainted canvases — extract via toDataURL,
+        // which sometimes bypasses the taint check.
+        try {
+          const dataUrl = canvas.toDataURL('image/png');
+          const bin = atob(dataUrl.split(',')[1]);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          resolve(new Blob([arr], { type: 'image/png' }));
+        } catch (err2) {
+          reject(err2);
+        }
+      }
     });
   }
 
