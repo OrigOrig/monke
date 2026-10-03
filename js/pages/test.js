@@ -1,11 +1,6 @@
 /* ============================================================
    TYPE FLOW — pages/test.js
-   Test page controller. Fixes:
-     - Bug 3: results as full-page view (not modal)
-     - Bug 7: custom text modal wired to engine
-     - Live stat skeleton → number transitions
-     - Config bar wiring (mode/submode/toggles)
-     - Settings drawer wiring
+   Test page controller. Results shown in a modal (reverted).
    ============================================================ */
 
 import { getState, update, subscribe } from '../state.js';
@@ -46,7 +41,6 @@ export class TestPage {
     this._handleModeClick = this._handleModeClick.bind(this);
     this._handleSubModeClick = this._handleSubModeClick.bind(this);
     this._handleToggleClick = this._handleToggleClick.bind(this);
-    this._handleResultsKeydown = this._handleResultsKeydown.bind(this);
   }
 
   // ============================================================
@@ -94,8 +88,8 @@ export class TestPage {
     this.dom.liveWpm = document.getElementById('liveWpm');
     this.dom.liveAcc = document.getElementById('liveAcc');
 
-    // Results full-page
-    this.dom.resultsPage = document.getElementById('resultsPage');
+    // Results modal
+    this.dom.resultsOverlay = document.getElementById('resultsOverlay');
     this.dom.resultWpm = document.getElementById('resultWpm');
     this.dom.resultAcc = document.getElementById('resultAcc');
     this.dom.resultRaw = document.getElementById('resultRaw');
@@ -103,6 +97,7 @@ export class TestPage {
     this.dom.resultChars = document.getElementById('resultChars');
     this.dom.resultTime = document.getElementById('resultTime');
     this.dom.wpmChart = document.getElementById('wpmChart');
+    this.dom.closeResultsBtn = document.getElementById('closeResultsBtn');
     this.dom.restartBtn = document.getElementById('resultRestartBtn');
     this.dom.nextTestBtn = document.getElementById('resultNextBtn');
     this.dom.repeatBtn = document.getElementById('resultRepeatBtn');
@@ -120,10 +115,11 @@ export class TestPage {
     this.dom.punctuationBtn?.addEventListener('click', this._handleToggleClick);
     this.dom.numbersBtn?.addEventListener('click', this._handleToggleClick);
 
-    // Results actions
+    this.dom.closeResultsBtn?.addEventListener('click', () => this.hideResults());
+
     this.dom.restartBtn?.addEventListener('click', () => {
       this.hideResults();
-      this.engine.restart();
+      this.engine.restart({ reroll: false });
     });
 
     this.dom.nextTestBtn?.addEventListener('click', () => {
@@ -149,8 +145,10 @@ export class TestPage {
       }
     });
 
-    // Keyboard shortcuts while results are showing
-    document.addEventListener('keydown', this._handleResultsKeydown);
+    // Click backdrop to close
+    this.dom.resultsOverlay?.addEventListener('click', (e) => {
+      if (e.target === this.dom.resultsOverlay) this.hideResults();
+    });
   }
 
   _detachListeners() {
@@ -158,20 +156,6 @@ export class TestPage {
     this.dom.subModeGroup?.removeEventListener('click', this._handleSubModeClick);
     this.dom.punctuationBtn?.removeEventListener('click', this._handleToggleClick);
     this.dom.numbersBtn?.removeEventListener('click', this._handleToggleClick);
-    document.removeEventListener('keydown', this._handleResultsKeydown);
-  }
-
-  _handleResultsKeydown(e) {
-    if (!this.dom.resultsPage || this.dom.resultsPage.hasAttribute('hidden')) return;
-    if (e.key === 'Tab' || e.key === 'Enter') {
-      e.preventDefault();
-      this.hideResults();
-      this.engine.restart({ reroll: true });
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      this.hideResults();
-      this.engine.focus();
-    }
   }
 
   // ============================================================
@@ -380,19 +364,12 @@ export class TestPage {
   }
 
   // ============================================================
-  // RESULTS (full-page view, not modal)
+  // RESULTS (modal)
   // ============================================================
 
   showResults(result) {
     if (!result) return;
     this._lastResult = result;
-
-    // Hide the entire test page, show only results
-    const testPage = document.getElementById('page-test');
-    if (testPage) testPage.setAttribute('hidden', '');
-
-    // Show results page
-    this.dom.resultsPage?.removeAttribute('hidden');
 
     // Populate values
     if (this.dom.resultWpm) this.dom.resultWpm.textContent = '0';
@@ -412,7 +389,10 @@ export class TestPage {
       this.dom.resultTime.textContent = `${Math.round(result.time || 0)}s`;
     }
 
-    // Count-up animations
+    // Show modal
+    this.dom.resultsOverlay?.removeAttribute('hidden');
+
+    // Animate count-up
     this._animateCountUp(this.dom.resultWpm, 0, result.wpm || 0, 700, '');
     this._animateCountUp(this.dom.resultAcc, 0, result.acc || 0, 700, '%');
 
@@ -425,29 +405,15 @@ export class TestPage {
       this._spawnPBBadge();
     }
 
-    // Finish sound
     this.sound?.play?.('finish');
-
-    // Scroll to top instantly so results fill the viewport
-    window.scrollTo({ top: 0, behavior: 'auto' });
-
-    // Focus the results page so keyboard shortcuts work
-    this.dom.resultsPage?.setAttribute('tabindex', '-1');
-    this.dom.resultsPage?.focus({ preventScroll: true });
   }
 
   hideResults() {
-    // Hide results, show test page again
-    this.dom.resultsPage?.setAttribute('hidden', '');
-
-    const testPage = document.getElementById('page-test');
-    if (testPage) testPage.removeAttribute('hidden');
-
+    this.dom.resultsOverlay?.setAttribute('hidden', '');
     this.engine.focus();
   }
 
   _practiceWeakWords() {
-    // Collect words from the last test that were typed incorrectly
     const log = this._lastResult?.replayLog || [];
     const weak = new Set();
 
@@ -567,9 +533,10 @@ export class TestPage {
   }
 
   _spawnPBBadge() {
-    if (!this.dom.resultsPage) return;
+    const modal = this.dom.resultsOverlay?.querySelector('.modal--results');
+    if (!modal) return;
 
-    const existing = this.dom.resultsPage.querySelector('.pb-badge');
+    const existing = modal.querySelector('.pb-badge');
     if (existing) existing.remove();
 
     const badge = document.createElement('div');
@@ -579,9 +546,8 @@ export class TestPage {
     badge.style.top = 'var(--space-lg)';
     badge.style.right = 'var(--space-lg)';
 
-    const hero = this.dom.resultsPage.querySelector('.results-hero') || this.dom.resultsPage;
-    hero.style.position = 'relative';
-    hero.appendChild(badge);
+    modal.style.position = 'relative';
+    modal.appendChild(badge);
 
     setTimeout(() => badge.remove(), 5000);
   }
