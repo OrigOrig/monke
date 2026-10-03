@@ -619,7 +619,7 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: var(--z-toast);
+  z-index: 99999;
   overflow: hidden;
 }
 
