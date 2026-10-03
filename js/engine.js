@@ -968,7 +968,7 @@ export class Engine {
     update('isTyping', false);
     update('isFinished', true);
 
-    const stats = this._computeFinalStats();
+    const stats = this.();
 
     if (this.onFinish) this.onFinish(stats);
   }
@@ -976,39 +976,109 @@ export class Engine {
   _computeFinalStats() {
     const minutes = Math.max(this.elapsed / 60, 1 / 60);
 
-    const wpm = Math.round((this.correctKeystrokes / 5) / minutes);
-    const raw = Math.round(
-      ((this.correctKeystrokes + this.incorrectKeystrokes + this.extraKeystrokes) / 5) / minutes
-    );
+    // ---------- Character + word breakdown ----------
+    let correctChars = 0;
+    let incorrectChars = 0;
+    let extraChars = 0;
+    let missedChars = 0;
 
+    // Fully-wrong words (typed something that shares no prefix)
+    let wrongWords = 0;
+    // Total words attempted (for word-level accuracy)
+    let attemptedWords = 0;
+
+    // WPM uses "correct chars from correct words only" + a bonus
+    // for partially-correct words, per Monkeytype semantics.
+    let wpmCorrectChars = 0;
+
+    for (let wi = 0; wi < this.words.length; wi++) {
+      const original = this.words[wi];
+      const transformed = this._transformWord(original);
+      const typed = this.typed[wi] || '';
+
+      // Skip the currently-being-typed word if the test was stopped mid-word
+      const isCurrentWord = wi === this.wordIndex && !this.isFinished;
+      if (isCurrentWord) continue;
+
+      // Skip words never typed at all
+      if (typed.length === 0) continue;
+
+      attemptedWords++;
+
+      // Is this word fully wrong? No character at the same index matches.
+      let anyMatch = false;
+      const checkLen = Math.min(typed.length, transformed.length);
+      for (let li = 0; li < checkLen; li++) {
+        if (typed[li] === transformed[li]) {
+          anyMatch = true;
+          break;
+        }
+      }
+
+      if (!anyMatch && typed.length > 0) {
+        // Fully-wrong word
+        wrongWords++;
+        incorrectChars += Math.min(typed.length, transformed.length);
+        extraChars += Math.max(0, typed.length - transformed.length);
+        missedChars += Math.max(0, transformed.length - typed.length);
+        continue;
+      }
+
+      // Partially-correct word: count per character
+      let seenIncorrect = false;
+      for (let li = 0; li < typed.length; li++) {
+        if (li >= transformed.length) {
+          extraChars++;
+          continue;
+        }
+        if (typed[li] === transformed[li]) {
+          if (!seenIncorrect) {
+            correctChars++;
+            wpmCorrectChars++;
+          } else {
+            // After first mistake, correct chars don't count toward WPM
+            correctChars++;
+          }
+        } else {
+          incorrectChars++;
+          seenIncorrect = true;
+        }
+      }
+
+      // Missed characters (rest of the word if not fully typed)
+      if (typed.length < transformed.length) {
+        missedChars += transformed.length - typed.length;
+      }
+
+      // A word is "fully correct" only if typed === transformed
+      if (typed === transformed) {
+        // No penalty — correct words already counted above
+      }
+    }
+
+    // Word-level accuracy = correct words / attempted words
+    const correctWords = attemptedWords - wrongWords;
+    const wordAccuracy = attemptedWords > 0
+      ? Math.round((correctWords / attemptedWords) * 1000) / 10
+      : 100;
+
+    // ---------- WPM ----------
+    // Monkeytype counts correct characters from correct words only.
+    // We use wpmCorrectChars which excludes chars after a mistake
+    // and excludes fully-wrong words entirely.
+    const wpm = Math.round((wpmCorrectChars / 5) / minutes);
+
+    // Raw WPM = everything typed ÷ 5 ÷ minutes
+    const totalTypedChars = correctChars + incorrectChars + extraChars;
+    const raw = Math.round((totalTypedChars / 5) / minutes);
+
+    // ---------- Accuracy ----------
     const totalKeystrokes = this.correctKeystrokes + this.incorrectKeystrokes;
     const acc = totalKeystrokes > 0
       ? Math.round((this.correctKeystrokes / totalKeystrokes) * 1000) / 10
       : 100;
 
     const consistency = this.stats?.calculateConsistency?.() ?? 100;
-
-    let correctChars = 0;
-    let incorrectChars = 0;
-    let extraChars = 0;
-    let missedChars = 0;
-
-    for (let wi = 0; wi < this.words.length; wi++) {
-      const transformed = this._transformWord(this.words[wi]);
-      const typed = this.typed[wi] || '';
-      const isCurrent = wi === this.wordIndex && !this.isFinished;
-      if (isCurrent) continue;
-
-      for (let li = 0; li < typed.length; li++) {
-        if (li >= transformed.length) extraChars++;
-        else if (typed[li] === transformed[li]) correctChars++;
-        else incorrectChars++;
-      }
-
-      if (typed.length < transformed.length && (wi < this.wordIndex || this.isFinished)) {
-        missedChars += transformed.length - typed.length;
-      }
-    }
 
     const chartData = this.stats?.getChartData?.() || [];
     const isPB = this.stats?.isPersonalBest?.(wpm) ?? false;
@@ -1017,6 +1087,7 @@ export class Engine {
       wpm,
       raw,
       acc,
+      wordAccuracy,
       consistency,
       time: this.elapsed,
       chars: {
@@ -1024,6 +1095,11 @@ export class Engine {
         incorrect: incorrectChars,
         extra: extraChars,
         missed: missedChars,
+      },
+      words: {
+        attempted: attemptedWords,
+        correct: correctWords,
+        wrong: wrongWords,
       },
       totalKeystrokes: this.totalKeystrokes,
       correctKeystrokes: this.correctKeystrokes,
@@ -1039,7 +1115,7 @@ export class Engine {
       isPB,
       bestStreak: this.bestStreak,
       replayLog: this.replayLog,
-      // New: raw word arrays for practice / history
+      // Raw word arrays for practice / history
       words: this.words.slice(),
       typed: this.typed.slice(),
       timestamp: Date.now(),
