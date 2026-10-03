@@ -728,8 +728,8 @@ export class Engine {
       return;
     }
 
-    // Auto-start on first keystroke
-    if (!this.isActive && !this.isFinished) {
+    // Auto-start on first keystroke — but NOT on space
+    if (!this.isActive && !this.isFinished && e.key !== ' ') {
       this._start();
     }
 
@@ -850,11 +850,18 @@ export class Engine {
   }
 
   _handleSpace() {
+    // Don't let space start the test
+    if (!this.isActive && !this.isFinished) return;
+
     const currentWord = this.words[this.wordIndex];
     if (currentWord === undefined) return;
 
     const transformedWord = this._transformWord(currentWord);
     const typedWord = this.typed[this.wordIndex] || '';
+
+    // Require at least one character typed before space advances
+    // to the next word. Prevents space-spam skipping words.
+    if (typedWord.length === 0) return;
 
     // Expert: fail if word wrong
     if (this.settings.difficulty === DIFFICULTY.EXPERT && typedWord !== transformedWord) {
