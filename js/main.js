@@ -357,10 +357,6 @@ function attachGlobalListeners() {
     if (e.target === DOM.commandOverlay) closeCommandPalette();
   });
 
-  DOM.resultsOverlay?.addEventListener('click', (e) => {
-    if (e.target === DOM.resultsOverlay) closeResults();
-  });
-
   DOM.customTextOverlay?.addEventListener('click', (e) => {
     if (e.target === DOM.customTextOverlay) closeCustomTextModal();
   });
@@ -391,28 +387,6 @@ function attachGlobalListeners() {
   document.getElementById('normalizeTypographyBtn')?.addEventListener('click', () => {
     const textarea = document.getElementById('customTextArea');
     textarea.value = modules.customText.normalizeTypography(textarea.value);
-  });
-
-  // Results modal buttons
-  document.getElementById('restartBtn')?.addEventListener('click', () => {
-    closeResults();
-    modules.engine.restart();
-  });
-
-  document.getElementById('nextTestBtn')?.addEventListener('click', () => {
-    closeResults();
-    modules.engine.restart({ reroll: true });
-  });
-
-  document.getElementById('closeResultsBtn')?.addEventListener('click', closeResults);
-
-  document.getElementById('screenshotBtn')?.addEventListener('click', async () => {
-    const modal = DOM.resultsOverlay?.querySelector('.modal--results');
-    if (modal) {
-      await modules.screenshot.captureElement(modal, {
-        filename: `typeflow-${Date.now()}.png`,
-      });
-    }
   });
 
   // Settings drawer controls
@@ -452,11 +426,6 @@ function handleGlobalKeyDown(e) {
     if (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) {
       e.preventDefault();
       closeSettings();
-      return;
-    }
-    if (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) {
-      e.preventDefault();
-      closeResults();
       return;
     }
     if (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden')) {
@@ -647,11 +616,6 @@ function closeSettings() {
   modules.engine.resume();
 }
 
-function closeResults() {
-  DOM.resultsOverlay?.setAttribute('hidden', '');
-  modules.engine.focus();
-}
-
 function openCustomTextModal() {
   DOM.customTextOverlay?.removeAttribute('hidden');
   const textarea = document.getElementById('customTextArea');
@@ -668,7 +632,6 @@ function closeCustomTextModal() {
 function closeAllModals() {
   if (DOM.commandOverlay && !DOM.commandOverlay.hasAttribute('hidden')) closeCommandPalette();
   if (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) closeSettings();
-  if (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) closeResults();
   if (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden')) closeCustomTextModal();
 }
 
@@ -676,7 +639,6 @@ function isModalOpen() {
   return (
     (DOM.commandOverlay && !DOM.commandOverlay.hasAttribute('hidden')) ||
     (DOM.settingsDrawer && !DOM.settingsDrawer.hasAttribute('hidden')) ||
-    (DOM.resultsOverlay && !DOM.resultsOverlay.hasAttribute('hidden')) ||
     (DOM.customTextOverlay && !DOM.customTextOverlay.hasAttribute('hidden'))
   );
 }
