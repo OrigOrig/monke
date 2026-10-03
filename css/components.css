@@ -1504,3 +1504,88 @@ html[data-reduce-motion="true"] .theme-swatch:hover {
 .config-bar--locked button {
   cursor: not-allowed;
 }
+
+
+/* ============================================================
+   CUSTOM TOOLTIP (dark popup, Monkeytype-style)
+   ============================================================ */
+
+.has-tooltip {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #1a1a1a;
+  color: #d1d0c5;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-top-color: #1a1a1a;
+}
+
+.has-tooltip:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tooltip__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tooltip__label {
+  color: #d1d0c5;
+}
+
+/* Character stat colors — match the letter colors */
+.tooltip__swatch--correct   { background: #d1d0c5; }
+.tooltip__swatch--incorrect { background: #ca4754; }
+.tooltip__swatch--extra     { background: #7e2a33; }
+.tooltip__swatch--missed    { background: #ca4754; opacity: 0.7; }
+.tooltip__swatch--wrong     { background: #ff6b6b; }
+
+/* Chart tooltip is smaller */
+.tooltip--chart {
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.tooltip--chart .tooltip__row {
+  gap: 6px;
+}
